@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="18" fill="#101319"/>
+  <path d="M64 8 108 25 104 76 64 119 24 76 20 25Z" fill="#f7f7f5" stroke="#090a0d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M64 15 99 29 96 71 64 103 32 71 29 29Z" fill="#151920" stroke="#f7f7f5" stroke-width="2"/>
+  <path d="M42 29 34 17 51 23 64 12 77 23 94 17 86 29" fill="none" stroke="#ff650f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="54" r="24" fill="#ff650f" stroke="#f7f7f5" stroke-width="3"/>
+  <path d="M40 54h48M64 30c-12 10-12 38 0 48M64 30c12 10 12 38 0 48M46 38c12 8 24 8 36 0M46 70c12-8 24-8 36 0" fill="none" stroke="#17191f" stroke-width="3" stroke-linecap="round"/>
+  <text x="64" y="91" fill="#fff" font-family="Arial,sans-serif" font-weight="900" font-size="9" text-anchor="middle" letter-spacing="1">RONGAI</text>
+  <text x="64" y="100" fill="#ff650f" font-family="Arial,sans-serif" font-weight="900" font-size="6.8" text-anchor="middle" letter-spacing=".4">BASKETBALL</text>
+</svg>
