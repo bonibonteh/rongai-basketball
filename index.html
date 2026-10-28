@@ -20,12 +20,12 @@
     <!-- GLOBAL TOP BAR: MODE SWITCHER -->
     <header class="bg-rbtCard border-b border-rbtBorder gut py-2.5 flex items-center justify-between shrink-0 z-50">
         <div class="flex items-center space-x-3">
-            <div class="bg-rbtOrange text-black font-heading font-black px-2.5 py-1 text-sm tracking-wider uppercase rounded skew-x-[-6deg]">
-                RBT '26
-            </div>
+            <a href="./" class="inline-flex items-center shrink-0" aria-label="Rongai Basketball League home">
+                <img src="assets/rongai-basketball-logo.svg" alt="Rongai Basketball League crest" class="h-11 w-11 sm:h-12 sm:w-12 object-contain" width="48" height="48">
+            </a>
             <div>
-                <h1 class="font-heading font-bold text-sm tracking-wider uppercase text-white flex items-center gap-2">
-                    Rongai Basketball Tournament <span id="mode-indicator" class="text-xs px-2 py-0.5 rounded bg-rbtOrange/20 text-rbtOrange font-sans font-semibold">Public Portal</span>
+                <h1 class="font-heading font-bold text-sm sm:text-base tracking-wider uppercase text-white">
+                    Rongai Basketball Tournament
                 </h1>
             </div>
         </div>
@@ -37,7 +37,7 @@
             </div>
             <button onclick="togglePortalMode()" id="mode-switch-btn" class="bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-xs uppercase px-4 py-2 rounded transition flex items-center gap-1.5 shadow-lg shadow-rbtOrange/20">
                 <i data-lucide="shield" class="w-3.5 h-3.5"></i>
-                <span id="mode-btn-text">Switch to Organizer Portal</span>
+                <span id="mode-btn-text">Open Official Portal</span>
             </button>
         </div>
     </header>
