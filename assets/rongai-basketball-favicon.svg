@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="18" fill="#101319"/>
-  <path d="M64 8 108 25 104 76 64 119 24 76 20 25Z" fill="#f7f7f5" stroke="#090a0d" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M64 15 99 29 96 71 64 103 32 71 29 29Z" fill="#151920" stroke="#f7f7f5" stroke-width="2"/>
-  <path d="M42 29 34 17 51 23 64 12 77 23 94 17 86 29" fill="none" stroke="#ff650f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="64" cy="54" r="24" fill="#ff650f" stroke="#f7f7f5" stroke-width="3"/>
-  <path d="M40 54h48M64 30c-12 10-12 38 0 48M64 30c12 10 12 38 0 48M46 38c12 8 24 8 36 0M46 70c12-8 24-8 36 0" fill="none" stroke="#17191f" stroke-width="3" stroke-linecap="round"/>
-  <text x="64" y="91" fill="#fff" font-family="Arial,sans-serif" font-weight="900" font-size="9" text-anchor="middle" letter-spacing="1">RONGAI</text>
-  <text x="64" y="100" fill="#ff650f" font-family="Arial,sans-serif" font-weight="900" font-size="6.8" text-anchor="middle" letter-spacing=".4">BASKETBALL</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" role="img" aria-labelledby="title">
+<title id="title">Rongai Basketball League crest</title>
+<defs><linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a18"/><stop offset="1" stop-color="#f04400"/></linearGradient></defs>
+<path d="M100 7 181 35 174 132Q164 181 100 211 36 181 26 132L19 35Z" fill="#090b0f" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M100 17 170 41 164 129Q155 171 100 197 45 171 36 129L30 41Z" fill="#15191f" stroke="url(#orange)" stroke-width="4"/>
+<path d="M47 43H153L146 57H54Z" fill="#f5f5f5"/>
+<text x="100" y="53" fill="#111318" font-family="Arial,sans-serif" font-size="10" font-weight="900" text-anchor="middle" letter-spacing="1">RONGAI</text>
+<circle cx="100" cy="101" r="42" fill="url(#orange)" stroke="#f5f5f5" stroke-width="3"/>
+<path d="M58 101H142M100 59V143M70 71Q100 101 70 131M130 71Q100 101 130 131" fill="none" stroke="#111318" stroke-width="4"/>
+<path d="M45 149H155L145 163H55Z" fill="#f5f5f5"/>
+<text x="100" y="160" fill="#111318" font-family="Arial,sans-serif" font-size="10" font-weight="900" text-anchor="middle" letter-spacing=".7">BASKETBALL</text>
+<text x="100" y="181" fill="#ff5a0a" font-family="Arial,sans-serif" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="2">LEAGUE</text>
 </svg>
