@@ -28,15 +28,11 @@
             if (rbtState.mode === 'admin') {
                 pubView.classList.add('hidden');
                 adminView.classList.remove('hidden');
-                modeInd.textContent = 'Organizer Portal';
-                modeInd.className = 'text-xs px-2 py-0.5 rounded bg-rbtGold/20 text-rbtGold font-sans font-semibold';
-                modeBtnText.textContent = 'Switch to Public Fan Portal';
+                modeBtnText.textContent = 'Return to Website';
             } else {
                 adminView.classList.add('hidden');
                 pubView.classList.remove('hidden');
-                modeInd.textContent = 'Public Portal';
-                modeInd.className = 'text-xs px-2 py-0.5 rounded bg-rbtOrange/20 text-rbtOrange font-sans font-semibold';
-                modeBtnText.textContent = 'Switch to Organizer Portal';
+                modeBtnText.textContent = 'Open Official Portal';
             }
         }
 
