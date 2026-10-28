@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" role="img" aria-labelledby="title">
+<title id="title">Rongai Basketball League crest</title>
+<defs><linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a18"/><stop offset="1" stop-color="#f04400"/></linearGradient></defs>
+<path d="M100 7 181 35 174 132Q164 181 100 211 36 181 26 132L19 35Z" fill="#090b0f" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M100 17 170 41 164 129Q155 171 100 197 45 171 36 129L30 41Z" fill="#15191f" stroke="url(#orange)" stroke-width="4"/>
+<path d="M47 43H153L146 57H54Z" fill="#f5f5f5"/>
+<text x="100" y="53" fill="#111318" font-family="Arial,sans-serif" font-size="10" font-weight="900" text-anchor="middle" letter-spacing="1">RONGAI</text>
+<circle cx="100" cy="101" r="42" fill="url(#orange)" stroke="#f5f5f5" stroke-width="3"/>
+<path d="M58 101H142M100 59V143M70 71Q100 101 70 131M130 71Q100 101 130 131" fill="none" stroke="#111318" stroke-width="4"/>
+<path d="M45 149H155L145 163H55Z" fill="#f5f5f5"/>
+<text x="100" y="160" fill="#111318" font-family="Arial,sans-serif" font-size="10" font-weight="900" text-anchor="middle" letter-spacing=".7">BASKETBALL</text>
+<text x="100" y="181" fill="#ff5a0a" font-family="Arial,sans-serif" font-size="13" font-weight="900" text-anchor="middle" letter-spacing="2">LEAGUE</text>
+</svg>
