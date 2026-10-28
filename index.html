@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rongai Basketball Tournament</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="js/tailwind-config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app" class="h-full w-full flex flex-col justify-between select-none urban-grid">
+
+
+    <!-- GLOBAL TOP BAR: MODE SWITCHER -->
+    <header class="bg-rbtCard border-b border-rbtBorder gut py-2.5 flex items-center justify-between shrink-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="bg-rbtOrange text-black font-heading font-black px-2.5 py-1 text-sm tracking-wider uppercase rounded skew-x-[-6deg]">
+                RBT '26
+            </div>
+            <div>
+                <h1 class="font-heading font-bold text-sm tracking-wider uppercase text-white flex items-center gap-2">
+                    Rongai Basketball Tournament <span id="mode-indicator" class="text-xs px-2 py-0.5 rounded bg-rbtOrange/20 text-rbtOrange font-sans font-semibold">Public Portal</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <div class="hidden md:flex items-center space-x-1 text-xs text-gray-400 bg-rbtDark px-3 py-1 rounded border border-rbtBorder">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Courtside Live Sync Active</span>
+            </div>
+            <button onclick="togglePortalMode()" id="mode-switch-btn" class="bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-xs uppercase px-4 py-2 rounded transition flex items-center gap-1.5 shadow-lg shadow-rbtOrange/20">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                <span id="mode-btn-text">Switch to Organizer Portal</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN VIEW CONTAINER (FLEX-1, NON-SCROLL BODY) -->
+    <main class="flex-1 overflow-hidden relative flex flex-col">
+
+        <!-- ========================================== -->
+        <!-- PUBLIC FAN PORTAL VIEW                     -->
+        <!-- ========================================== -->
+        <div id="public-portal-view" class="absolute inset-0 flex flex-col overflow-hidden">
+            <div id="hype-banner" class="hidden shrink-0 bg-rbtOrange text-black font-heading font-black text-sm uppercase tracking-wider text-center py-2 gut" role="status"></div>
+            
+            <!-- LIVE TICKER BAR -->
+            <div class="bg-black/80 border-b border-rbtBorder gut py-1.5 flex items-center justify-between shrink-0 text-xs overflow-x-auto whitespace-nowrap">
+                <div class="flex items-center space-x-6 animate-pulse">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-red-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px] uppercase">LIVE</span>
+                        <span class="font-bold text-white">Rongai Heat <span id="ticker-home-score" class="text-rbtOrange">78</span> - <span id="ticker-away-score" class="text-gray-300">72</span> Matatu Kings</span>
+                        <span class="text-gray-400 text-[11px]">(Q4 - <span id="ticker-clock">02:14</span>)</span>
+                    </div>
+                    <span class="text-rbtBorder">•</span>
+                    <span class="text-gray-400">Next: Oloolua Ballers vs Ngong Bulls (16:00 EAT)</span>
+                    <span class="text-rbtBorder">•</span>
+                    <span class="text-rbtGold font-medium">🔥 MVP Voting Now Live in Fan Zone!</span>
+                </div>
+            </div>
+
+            <!-- PUBLIC TAB NAVIGATION -->
+            <nav class="bg-rbtCard/90 border-b border-rbtBorder gut py-2 flex items-center space-x-2 shrink-0 overflow-x-auto">
+                <button onclick="switchPublicTab('overview')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 bg-rbtOrange text-black shadow" data-tab="overview">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+                </button>
+                <button onclick="switchPublicTab('matches')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="matches">
+                    <i data-lucide="activity" class="w-4 h-4"></i> Match Center
+                </button>
+                <button onclick="switchPublicTab('brackets')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="brackets">
+                    <i data-lucide="git-merge" class="w-4 h-4"></i> Brackets & Standings
+                </button>
+                <button onclick="switchPublicTab('ballers')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="ballers">
+                    <i data-lucide="users" class="w-4 h-4"></i> Rongai Ballers
+                </button>
+                <button onclick="switchPublicTab('fanzone')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="fanzone">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Fan Zone
+                </button>
+                <button onclick="switchPublicTab('culture')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="culture">
+                    <i data-lucide="shopping-bag" class="w-4 h-4"></i> Culture & Merch
+                </button>
+                <button onclick="switchPublicTab('register')" class="public-tab-btn px-4 py-2 rounded text-xs font-heading font-bold uppercase transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-rbtBorder/50" data-tab="register">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Register Team
+                </button>
+            </nav>
+
+            <!-- PUBLIC TAB CONTENT CONTAINER -->
+            <div class="gut flex-1 overflow-y-auto p-4 md:p-6 relative">
+
+                <!-- TAB 1: OVERVIEW -->
+                <div id="ptab-overview" class="public-tab-content space-y-6 max-w-7xl mx-auto">
+                    <!-- Hero Banner -->
+                    <div class="relative rounded-2xl overflow-hidden border border-rbtBorder bg-gradient-to-r from-rbtCard via-[#1f2633] to-rbtCard p-8 md:p-12 shadow-2xl flex flex-col md:flex-row items-center justify-between">
+                        <div class="absolute inset-0 bg-[radial-gradient(#ff5500_1px,transparent_1px)] [background-size:16px_16px] opacity-10"></div>
+                        <div class="relative z-10 max-w-2xl space-y-4">
+                            <div class="inline-flex items-center gap-2 bg-rbtOrange/10 border border-rbtOrange/30 px-3 py-1 rounded-full text-rbtOrange text-xs font-bold uppercase tracking-wider">
+                                <span class="w-2 h-2 rounded-full bg-rbtOrange animate-ping"></span> Rongai's Biggest Hoops Showdown
+                            </div>
+                            <h2 class="font-heading font-extrabold text-4xl md:text-6xl uppercase tracking-tight text-white leading-none">
+                                Rongai Basketball <span class="text-rbtOrange">Tournament</span>
+                            </h2>
+                            <p class="text-gray-300 text-sm md:text-base">
+                                Where asphalt meets high-intensity elite streetball culture. Experience live scores, electrifying dunks, community vibes, and fierce competition right in the heart of Rongai.
+                            </p>
+                            <div class="flex flex-wrap gap-3 pt-2">
+                                <button onclick="switchPublicTab('matches')" class="bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-xs uppercase px-6 py-3 rounded transition shadow-lg flex items-center gap-2">
+                                    <i data-lucide="activity" class="w-4 h-4"></i> View Live Match Center
+                                </button>
+                                <button onclick="switchPublicTab('fanzone')" class="bg-rbtCard hover:bg-rbtBorder text-white border border-rbtBorder font-heading font-bold text-xs uppercase px-6 py-3 rounded transition flex items-center gap-2">
+                                    <i data-lucide="award" class="w-4 h-4 text-rbtGold"></i> Vote for MVP
+                                </button>
+                            </div>
+                        </div>
+                        <div class="relative z-10 mt-6 md:mt-0 flex flex-col items-center justify-center bg-black/40 border border-rbtBorder p-6 rounded-xl backdrop-blur text-center w-full md:w-72">
+                            <span class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-1">Tournament Stage</span>
+                            <span class="font-heading font-black text-3xl text-rbtGold uppercase">Quarterfinals</span>
+                            <span class="text-xs text-gray-400 mt-2">Rongai Astroturf Courts</span>
+                            <div class="mt-4 w-full bg-rbtBorder h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-rbtOrange h-full w-3/4"></div>
+                            </div>
+                            <span class="text-[10px] text-gray-400 mt-1">Day 3 of 4 Completed</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Highlights Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl hover:border-rbtOrange/50 transition">
+                            <div class="w-12 h-12 rounded-lg bg-rbtOrange/10 flex items-center justify-center text-rbtOrange mb-4">
+                                <i data-lucide="radio" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="font-heading font-bold text-lg text-white mb-2">Live Courtside Feed</h3>
+                            <p class="text-gray-400 text-sm">Real-time score tracking, 24-second shot clocks, and instant foul metrics updated directly from the courtside table.</p>
+                        </div>
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl hover:border-rbtOrange/50 transition">
+                            <div class="w-12 h-12 rounded-lg bg-rbtGold/10 flex items-center justify-center text-rbtGold mb-4">
+                                <i data-lucide="users" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="font-heading font-bold text-lg text-white mb-2">Rongai Ballers Directory</h3>
+                            <p class="text-gray-400 text-sm">Explore player cards, career stats, signature moves, and holographic digital trading cards for every competitor.</p>
+                        </div>
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl hover:border-rbtOrange/50 transition">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4">
+                                <i data-lucide="zap" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="font-heading font-bold text-lg text-white mb-2">Interactive Fan Zone</h3>
+                            <p class="text-gray-400 text-sm">Cast your live MVP vote, predict match winners, join halftime 3-point challenges, and vibe to courtside DJ beats.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: MATCH CENTER -->
+                <div id="ptab-matches" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-heading font-bold text-2xl uppercase text-white">Live Match Center</h3>
+                            <p class="text-gray-400 text-sm">Real-time scores synced with the courtside admin console.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="filterMatches('all')" class="match-filter-btn px-3 py-1.5 rounded text-xs font-heading font-bold uppercase bg-rbtOrange text-black">All Matches</button>
+                            <button onclick="filterMatches('live')" class="match-filter-btn px-3 py-1.5 rounded text-xs font-heading font-bold uppercase bg-rbtCard border border-rbtBorder text-gray-300 hover:text-white">LIVE</button>
+                            <button onclick="filterMatches('upcoming')" class="match-filter-btn px-3 py-1.5 rounded text-xs font-heading font-bold uppercase bg-rbtCard border border-rbtBorder text-gray-300 hover:text-white">Upcoming</button>
+                            <button onclick="filterMatches('final')" class="match-filter-btn px-3 py-1.5 rounded text-xs font-heading font-bold uppercase bg-rbtCard border border-rbtBorder text-gray-300 hover:text-white">Finals</button>
+                        </div>
+                    </div>
+
+                    <!-- Live Match Spotlight Card -->
+                    <div class="bg-gradient-to-br from-rbtCard to-[#1a212d] border-2 border-rbtOrange/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-4 right-4 flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider animate-pulse">
+                                <span class="w-2 h-2 rounded-full bg-white"></span> LIVE NOW
+                            </span>
+                            <span class="bg-black/60 border border-rbtBorder text-xs text-gray-300 px-2.5 py-1 rounded font-mono">Court 1</span>
+                        </div>
+                        
+                        <div class="text-center mb-6">
+                            <span class="text-xs uppercase tracking-widest text-rbtOrange font-heading font-bold">Quarterfinal Game 3</span>
+                            <h4 class="font-heading font-bold text-lg text-white">Rongai Heat vs Matatu Kings</h4>
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center text-center my-4">
+                            <div class="space-y-1">
+                                <span class="text-sm font-heading font-bold text-gray-300 uppercase block">Rongai Heat</span>
+                                <div id="public-live-home-score" class="font-heading font-black text-5xl md:text-7xl text-white">78</div>
+                                <span class="text-xs text-gray-400">Fouls: <span id="public-live-home-fouls">3</span> | Timeouts: <span id="public-live-home-to">2</span></span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center">
+                                <span class="text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">Q4</span>
+                                <div class="bg-black/50 border border-rbtBorder px-3 py-1 rounded text-rbtGold font-mono font-bold text-sm mb-2" id="public-live-game-clock">02:14</div>
+                                <span class="text-[10px] uppercase text-gray-400">Shot Clock</span>
+                                <div class="text-rbtOrange font-mono font-black text-xl" id="public-live-shot-clock">14s</div>
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-sm font-heading font-bold text-gray-300 uppercase block">Matatu Kings</span>
+                                <div id="public-live-away-score" class="font-heading font-black text-5xl md:text-7xl text-gray-400">72</div>
+                                <span class="text-xs text-gray-400">Fouls: <span id="public-live-away-fouls">4</span> | Timeouts: <span id="public-live-away-to">1</span></span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-rbtBorder pt-4 mt-6 flex flex-wrap items-center justify-between text-xs text-gray-400 gap-2">
+                            <span>Referees: Coach Brian, Ref Dennis</span>
+                            <span class="text-rbtGold font-medium">⚡ Stream active on TikTok @RongaiHoops</span>
+                        </div>
+                    </div>
+
+                    <!-- Other Fixtures Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="fixtures-container">
+                        <div class="bg-rbtCard border border-rbtBorder p-4 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">FINAL</span>
+                                <h4 class="font-heading font-bold text-white mt-1">Oloolua Ballers 84 - 65 Kware Titans</h4>
+                                <p class="text-xs text-gray-400 mt-0.5">Court 1 • Full Time Box Score</p>
+                            </div>
+                            <button onclick="toast('Viewing detailed box score & player stats.')" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white text-xs font-heading font-bold px-3 py-2 rounded transition">Stats</button>
+                        </div>
+                        <div class="bg-rbtCard border border-rbtBorder p-4 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-rbtGold font-bold bg-rbtGold/10 px-2 py-0.5 rounded">UPCOMING</span>
+                                <h4 class="font-heading font-bold text-white mt-1">Sironik Squad vs Maasai Lodge Ballers</h4>
+                                <p class="text-xs text-gray-400 mt-0.5">Court 2 • Today at 16:30 EAT</p>
+                            </div>
+                            <button onclick="toast('Match reminder set!')" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white text-xs font-heading font-bold px-3 py-2 rounded transition">Remind</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: BRACKETS & STANDINGS -->
+                <div id="ptab-brackets" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Tournament Bracket & Standings</h3>
+                        <p class="text-gray-400 text-sm">Elimination tree and group pool leaderboards.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Bracket Tree View -->
+                        <div class="lg:col-span-2 bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-4">
+                            <h4 class="font-heading font-bold text-base uppercase text-rbtOrange flex items-center gap-2">
+                                <i data-lucide="git-merge" class="w-4 h-4"></i> Single Elimination Playoffs
+                            </h4>
+                            <div class="space-y-4 text-xs">
+                                <div class="grid grid-cols-3 gap-4 items-center">
+                                    <div class="space-y-2">
+                                        <div class="bg-black/40 border border-rbtBorder p-2.5 rounded">
+                                            <div class="flex justify-between font-bold text-white"><span>Rongai Heat</span> <span>78</span></div>
+                                            <div class="flex justify-between text-gray-400"><span>Matatu Kings</span> <span>72</span></div>
+                                        </div>
+                                        <div class="bg-black/40 border border-rbtBorder p-2.5 rounded">
+                                            <div class="flex justify-between font-bold text-white"><span>Oloolua Ballers</span> <span>84</span></div>
+                                            <div class="flex justify-between text-gray-400"><span>Kware Titans</span> <span>65</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="h-12 w-0.5 bg-rbtOrange"></div>
+                                        <span class="bg-rbtOrange text-black font-heading font-black text-[10px] px-2 py-1 rounded uppercase my-1">SEMI</span>
+                                        <div class="h-12 w-0.5 bg-rbtOrange"></div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="bg-black/40 border border-rbtOrange/60 p-3 rounded">
+                                            <span class="text-[10px] text-rbtOrange font-bold uppercase block mb-1">Championship Final</span>
+                                            <div class="flex justify-between font-bold text-white"><span>Rongai Heat</span> <span class="text-gray-500">--</span></div>
+                                            <div class="flex justify-between font-bold text-white"><span>Oloolua Ballers</span> <span class="text-gray-500">--</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group Standings Table -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-4">
+                            <h4 class="font-heading font-bold text-base uppercase text-rbtGold flex items-center gap-2">
+                                <i data-lucide="trophy" class="w-4 h-4"></i> Pool A Standings
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="border-b border-rbtBorder text-gray-400">
+                                            <th class="pb-2">Team</th>
+                                            <th class="pb-2 text-center">W</th>
+                                            <th class="pb-2 text-center">L</th>
+                                            <th class="pb-2 text-right">PTS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-rbtBorder/50 font-medium">
+                                        <tr class="text-white">
+                                            <td class="py-2.5">1. Rongai Heat</td>
+                                            <td class="text-center">3</td>
+                                            <td class="text-center">0</td>
+                                            <td class="text-right font-bold text-rbtOrange">6</td>
+                                        </tr>
+                                        <tr class="text-white">
+                                            <td class="py-2.5">2. Oloolua Ballers</td>
+                                            <td class="text-center">2</td>
+                                            <td class="text-center">1</td>
+                                            <td class="text-right font-bold text-rbtOrange">5</td>
+                                        </tr>
+                                        <tr class="text-gray-300">
+                                            <td class="py-2.5">3. Matatu Kings</td>
+                                            <td class="text-center">1</td>
+                                            <td class="text-center">2</td>
+                                            <td class="text-right">4</td>
+                                        </tr>
+                                        <tr class="text-gray-400">
+                                            <td class="py-2.5">4. Kware Titans</td>
+                                            <td class="text-center">0</td>
+                                            <td class="text-center">3</td>
+                                            <td class="text-right">3</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: RONGAI BALLERS -->
+                <div id="ptab-ballers" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-heading font-bold text-2xl uppercase text-white">Rongai Ballers Roster & Trading Cards</h3>
+                            <p class="text-gray-400 text-sm">Star players, stats, and holographic digital cards.</p>
+                        </div>
+                        <input type="text" placeholder="Search player or team..." class="bg-black/50 border border-rbtBorder rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange w-full md:w-64">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Player Card 1 -->
+                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
+                            <div class="absolute top-3 right-3 bg-rbtOrange/20 text-rbtOrange font-heading font-black text-xs px-2 py-0.5 rounded">PG #07</div>
+                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-rbtOrange border-2 border-rbtOrange">
+                                KB
+                            </div>
+                            <h4 class="font-heading font-bold text-lg text-center text-white">Kevin "Kevo" Maina</h4>
+                            <span class="text-xs text-gray-400 block text-center mb-4">Rongai Heat • Point Guard</span>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-rbtOrange text-sm">24.5</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">APG</span><span class="font-bold text-white text-sm">8.2</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">RPG</span><span class="font-bold text-white text-sm">4.1</span></div>
+                            </div>
+                            <button onclick="toast('Opening Kevo Maina digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
+                                View Trading Card
+                            </button>
+                        </div>
+                        <!-- Player Card 2 -->
+                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
+                            <div class="absolute top-3 right-3 bg-rbtGold/20 text-rbtGold font-heading font-black text-xs px-2 py-0.5 rounded">C #23</div>
+                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-rbtGold border-2 border-rbtGold">
+                                ON
+                            </div>
+                            <h4 class="font-heading font-bold text-lg text-center text-white">Otieno "Twin Towers" Nyabola</h4>
+                            <span class="text-xs text-gray-400 block text-center mb-4">Oloolua Ballers • Center</span>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-rbtGold text-sm">18.0</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">BPG</span><span class="font-bold text-white text-sm">3.8</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">RPG</span><span class="font-bold text-white text-sm">12.4</span></div>
+                            </div>
+                            <button onclick="toast('Opening Otieno Nyabola digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
+                                View Trading Card
+                            </button>
+                        </div>
+                        <!-- Player Card 3 -->
+                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
+                            <div class="absolute top-3 right-3 bg-emerald-500/20 text-emerald-400 font-heading font-black text-xs px-2 py-0.5 rounded">SG #11</div>
+                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-emerald-400 border-2 border-emerald-400">
+                                CW
+                            </div>
+                            <h4 class="font-heading font-bold text-lg text-center text-white">Cliff "Sniper" Wanyama</h4>
+                            <span class="text-xs text-gray-400 block text-center mb-4">Matatu Kings • Shooting Guard</span>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-emerald-400 text-sm">21.2</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">3P%</span><span class="font-bold text-white text-sm">46.5%</span></div>
+                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">STL</span><span class="font-bold text-white text-sm">2.1</span></div>
+                            </div>
+                            <button onclick="toast('Opening Cliff Wanyama digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
+                                View Trading Card
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: FAN ZONE -->
+                <div id="ptab-fanzone" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Interactive Fan Zone</h3>
+                        <p class="text-gray-400 text-sm">Cast your vote, predict winners, and join halftime events.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- MVP Voting Box -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-heading font-bold text-lg text-white flex items-center gap-2">
+                                    <i data-lucide="award" class="text-rbtGold w-5 h-5"></i> Live MVP Poll
+                                </h4>
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-1 rounded font-bold uppercase">Active</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Vote for the standout player of today's marquee matchup.</p>
+                            
+                            <div class="space-y-3" id="mvp-poll-options">
+                                <button onclick="castMvpVote('Kevin Maina (Rongai Heat)')" class="w-full text-left bg-black/40 hover:bg-rbtOrange/10 border border-rbtBorder p-3 rounded-xl flex items-center justify-between transition group">
+                                    <span class="font-bold text-white text-sm group-hover:text-rbtOrange">Kevin Maina (Rongai Heat)</span>
+                                    <span class="text-xs text-gray-400 font-mono">54% votes</span>
+                                </button>
+                                <button onclick="castMvpVote('Otieno Nyabola (Oloolua Ballers)')" class="w-full text-left bg-black/40 hover:bg-rbtOrange/10 border border-rbtBorder p-3 rounded-xl flex items-center justify-between transition group">
+                                    <span class="font-bold text-white text-sm group-hover:text-rbtOrange">Otieno Nyabola (Oloolua Ballers)</span>
+                                    <span class="text-xs text-gray-400 font-mono">31% votes</span>
+                                </button>
+                                <button onclick="castMvpVote('Cliff Wanyama (Matatu Kings)')" class="w-full text-left bg-black/40 hover:bg-rbtOrange/10 border border-rbtBorder p-3 rounded-xl flex items-center justify-between transition group">
+                                    <span class="font-bold text-white text-sm group-hover:text-rbtOrange">Cliff Wanyama (Matatu Kings)</span>
+                                    <span class="text-xs text-gray-400 font-mono">15% votes</span>
+                                </button>
+                            </div>
+                            <div id="mvp-vote-msg" class="text-xs text-rbtGold font-medium hidden">✓ Vote recorded successfully! Thank you for participating.</div>
+                        </div>
+
+                        <!-- Halftime Challenge Registration -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4">
+                            <h4 class="font-heading font-bold text-lg text-white flex items-center gap-2">
+                                <i data-lucide="zap" class="text-rbtOrange w-5 h-5"></i> Halftime 3-Point Shootout
+                            </h4>
+                            <p class="text-xs text-gray-400">Sign up for the fan 3-point contest and win cash vouchers and merchandise!</p>
+                            
+                            <form onsubmit="handleHalftimeReg(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Your Full Name</label>
+                                    <input type="text" id="ht-name" required placeholder="e.g. Brian Kiprono" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Phone Number (M-Pesa)</label>
+                                    <input type="text" id="ht-phone" required placeholder="0712 345 678" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                                <button type="submit" class="w-full bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-xs uppercase py-3 rounded-lg transition shadow-lg">
+                                    Register for Shootout
+                                </button>
+                            </form>
+                            <div id="ht-success-msg" class="text-xs text-emerald-400 font-medium hidden">✓ Successfully registered! Report to the scorer's table 10 mins before halftime.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 6: CULTURE & MERCH -->
+                <div id="ptab-culture" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Street Culture & Official Merch</h3>
+                        <p class="text-gray-400 text-sm">Food stalls, music, and official RBT '26 apparel.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
+                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-rbtOrange font-heading font-bold text-lg">RBT HOODIE</div>
+                            <h4 class="font-heading font-bold text-white text-base">Official RBT '26 Heavyweight Hoodie</h4>
+                            <p class="text-xs text-gray-400">Premium brushed fleece streetwear hoodie with embroidered Rongai skyline logo.</p>
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="font-heading font-black text-rbtGold text-lg">KES 3,500</span>
+                                <button onclick="toast('Added Hoodie to cart!')" class="bg-rbtOrange text-black text-xs font-heading font-bold px-4 py-2 rounded">Buy Now</button>
+                            </div>
+                        </div>
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
+                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-rbtGold font-heading font-bold text-lg">STREETBALL TEE</div>
+                            <h4 class="font-heading font-bold text-white text-base">Asphalt Mesh Basketball Jersey</h4>
+                            <p class="text-xs text-gray-400">Breathable moisture-wicking fabric designed for peak court performance.</p>
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="font-heading font-black text-rbtGold text-lg">KES 2,000</span>
+                                <button onclick="toast('Added Jersey to cart!')" class="bg-rbtOrange text-black text-xs font-heading font-bold px-4 py-2 rounded">Buy Now</button>
+                            </div>
+                        </div>
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
+                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-emerald-400 font-heading font-bold text-lg">COURTSIDE VENDORS</div>
+                            <h4 class="font-heading font-bold text-white text-base">Food & Refreshment Zone</h4>
+                            <p class="text-xs text-gray-400">Enjoy local Kenyan grills, smoothies, and energy drinks right next to Court 1.</p>
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-xs text-emerald-400 font-bold uppercase">Open All Day</span>
+                                <span class="text-xs text-gray-400">Free Entry</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 7: REGISTER TEAM -->
+                <div id="ptab-register" class="public-tab-content hidden space-y-6 max-w-3xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Team Registration Portal</h3>
+                        <p class="text-gray-400 text-sm">Register your squad for the upcoming tournament season.</p>
+                    </div>
+
+                    <div class="bg-rbtCard border border-rbtBorder p-8 rounded-2xl space-y-6">
+                        <form onsubmit="handleTeamRegistration(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Team Name</label>
+                                    <input type="text" id="reg-team-name" required placeholder="e.g. Rongai Titans" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Team Captain Name</label>
+                                    <input type="text" id="reg-captain" required placeholder="e.g. Kevin Maina" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Captain Phone (M-Pesa)</label>
+                                    <input type="text" id="reg-phone" required placeholder="0712 345 678" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-300 mb-1">M-Pesa Transaction ID (Fee: KES 5,000)</label>
+                                    <input type="text" id="reg-mpesa" required placeholder="e.g. QHX892K1L9" class="w-full bg-black/50 border border-rbtBorder rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-gray-300 mb-1">Roster Player Names (Comma Separated)</label>
+                                <textarea id="reg-roster" rows="3" required placeholder="Player 1, Player 2, Player 3..." class="w-full bg-black/50 border border-rbtBorder rounded-lg p-3 text-xs text-white focus:outline-none focus:border-rbtOrange"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-sm uppercase py-3.5 rounded-lg transition shadow-xl">
+                                Submit Team Application
+                            </button>
+                        </form>
+                        <div id="reg-success-box" class="hidden bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-center space-y-2">
+                            <span class="text-emerald-400 font-heading font-bold uppercase text-sm block">✓ Team Application Submitted Successfully!</span>
+                            <p class="text-xs text-gray-300">Your registration is now pending review in the Organizer Portal.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- ORGANIZER / ADMIN PORTAL VIEW              -->
+        <!-- ========================================== -->
+        <div id="admin-portal-view" class="absolute inset-0 flex flex-col overflow-hidden hidden bg-[#080a0e]">
+            
+            <!-- ADMIN SUB-HEADER / ROLE SWITCHER -->
+            <div class="bg-rbtCard border-b border-rbtBorder gut py-2 flex flex-wrap items-center justify-between shrink-0 gap-2">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs uppercase font-heading font-bold text-gray-400">Admin Role:</span>
+                    <select id="admin-role-select" onchange="switchAdminRole(this.value)" class="bg-black border border-rbtBorder text-xs text-white px-3 py-1.5 rounded focus:outline-none focus:border-rbtOrange font-medium">
+                        <option value="director">Super Admin / Tournament Director</option>
+                        <option value="scorekeeper" selected>Courtside Scorekeeper</option>
+                        <option value="media">Media & Announcer / DJ</option>
+                        <option value="gate">Gate & Check-In Desk</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded font-medium flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live WebSocket Sync Active
+                    </span>
+                </div>
+            </div>
+
+            <!-- ADMIN TABS / MODULES -->
+            <nav class="bg-black/60 border-b border-rbtBorder gut py-1.5 flex items-center space-x-2 shrink-0 overflow-x-auto text-xs">
+                <button onclick="switchAdminTab('courtside')" class="admin-tab-btn px-3.5 py-2 rounded font-heading font-bold uppercase transition bg-rbtOrange text-black shadow" data-tab="courtside">
+                    1. Courtside Console
+                </button>
+                <button onclick="switchAdminTab('schedule')" class="admin-tab-btn px-3.5 py-2 rounded font-heading font-bold uppercase transition text-gray-400 hover:text-white" data-tab="schedule">
+                    2. Master Schedule & Brackets
+                </button>
+                <button onclick="switchAdminTab('teams')" class="admin-tab-btn px-3.5 py-2 rounded font-heading font-bold uppercase transition text-gray-400 hover:text-white" data-tab="teams">
+                    3. Team & Roster Verification
+                </button>
+                <button onclick="switchAdminTab('atmosphere')" class="admin-tab-btn px-3.5 py-2 rounded font-heading font-bold uppercase transition text-gray-400 hover:text-white" data-tab="atmosphere">
+                    4. Fan Zone & DJ Control
+                </button>
+            </nav>
+
+            <!-- ADMIN MODULE CONTENT CONTAINER -->
+            <div class="gut flex-1 overflow-y-auto p-4 md:p-6 relative">
+
+                <!-- MODULE 1: COURTSIDE SCOREKEEPER CONSOLE -->
+                <div id="atab-courtside" class="admin-tab-content space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-rbtCard border border-rbtBorder p-4 rounded-xl">
+                        <div>
+                            <span class="text-[10px] text-rbtOrange font-bold uppercase">Active Match Control</span>
+                            <h4 class="font-heading font-bold text-white text-lg">Rongai Heat vs Matatu Kings</h4>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400">Assign Court:</span>
+                            <select class="bg-black border border-rbtBorder text-xs text-white px-3 py-1.5 rounded">
+                                <option>Court 1 (Main Astroturf)</option>
+                                <option>Court 2 (Annex)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SCOREBOARD & CONTROLS GRID -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- HOME TEAM CONTROLLER -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4 text-center">
+                            <span class="text-xs uppercase font-heading font-bold text-gray-400 tracking-wider">Home Team</span>
+                            <h3 class="font-heading font-bold text-xl text-white">Rongai Heat</h3>
+                            <div class="font-heading font-black text-6xl text-rbtOrange my-2" id="admin-home-score">78</div>
+                            
+                            <div class="grid grid-cols-3 gap-2 pt-2">
+                                <button onclick="modifyScore('home', 1)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold py-3 rounded text-sm transition">+1 FT</button>
+                                <button onclick="modifyScore('home', 2)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold py-3 rounded text-sm transition">+2 FG</button>
+                                <button onclick="modifyScore('home', 3)" class="bg-rbtOrange text-black font-heading font-bold py-3 rounded text-sm transition">+3 3PT</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 pt-2">
+                                <button onclick="modifyFouls('home', 1)" class="bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-heading font-bold py-2 rounded text-xs transition">+1 Foul (<span id="admin-home-fouls">3</span>)</button>
+                                <button onclick="modifyTimeout('home')" class="bg-rbtBorder text-gray-300 hover:text-white font-heading font-bold py-2 rounded text-xs transition">Timeout (<span id="admin-home-to">2</span>)</button>
+                            </div>
+                        </div>
+
+                        <!-- CLOCK & TIMER MASTER CONTROLLER -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4 flex flex-col justify-between text-center">
+                            <div>
+                                <span class="text-xs uppercase font-heading font-bold text-rbtGold tracking-wider">Master Game Clock</span>
+                                <div class="font-heading font-black text-4xl text-white my-2" id="admin-game-clock">02:14</div>
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="toggleGameClock()" id="clock-toggle-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs uppercase px-4 py-2 rounded">Start / Pause</button>
+                                    <button onclick="resetGameClock()" class="bg-rbtBorder hover:bg-white hover:text-black text-gray-300 font-heading font-bold text-xs uppercase px-3 py-2 rounded">Reset</button>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-rbtBorder pt-4">
+                                <span class="text-xs uppercase font-heading font-bold text-rbtOrange tracking-wider">24-Sec Shot Clock</span>
+                                <div class="font-heading font-black text-3xl text-rbtOrange my-1" id="admin-shot-clock">14s</div>
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="resetShotClock(24)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-[11px] px-3 py-1.5 rounded">Reset 24s</button>
+                                    <button onclick="resetShotClock(14)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-[11px] px-3 py-1.5 rounded">Reset 14s</button>
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                <span class="text-xs text-gray-400 block mb-1 font-bold uppercase">Quarter / Period</span>
+                                <div class="flex justify-center gap-1">
+                                    <button class="bg-rbtOrange text-black px-3 py-1 rounded text-xs font-bold">Q4</button>
+                                    <button class="bg-rbtBorder text-gray-400 px-3 py-1 rounded text-xs font-bold">OT</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AWAY TEAM CONTROLLER -->
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4 text-center">
+                            <span class="text-xs uppercase font-heading font-bold text-gray-400 tracking-wider">Away Team</span>
+                            <h3 class="font-heading font-bold text-xl text-white">Matatu Kings</h3>
+                            <div class="font-heading font-black text-6xl text-gray-300 my-2" id="admin-away-score">72</div>
+                            
+                            <div class="grid grid-cols-3 gap-2 pt-2">
+                                <button onclick="modifyScore('away', 1)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold py-3 rounded text-sm transition">+1 FT</button>
+                                <button onclick="modifyScore('away', 2)" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold py-3 rounded text-sm transition">+2 FG</button>
+                                <button onclick="modifyScore('away', 3)" class="bg-rbtOrange text-black font-heading font-bold py-3 rounded text-sm transition">+3 3PT</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 pt-2">
+                                <button onclick="modifyFouls('away', 1)" class="bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white font-heading font-bold py-2 rounded text-xs transition">+1 Foul (<span id="admin-away-fouls">4</span>)</button>
+                                <button onclick="modifyTimeout('away')" class="bg-rbtBorder text-gray-300 hover:text-white font-heading font-bold py-2 rounded text-xs transition">Timeout (<span id="admin-away-to">1</span>)</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- MODULE 2: MASTER SCHEDULE & BRACKETS -->
+                <div id="atab-schedule" class="admin-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-heading font-bold text-2xl uppercase text-white">Tournament Master Schedule & Match States</h3>
+                            <p class="text-gray-400 text-sm">Control match statuses across all venue courts.</p>
+                        </div>
+                        <button onclick="toast('New fixture added to schedule!')" class="bg-rbtOrange text-black font-heading font-bold text-xs uppercase px-4 py-2.5 rounded shadow">
+                            + Add Match Fixture
+                        </button>
+                    </div>
+
+                    <div class="bg-rbtCard border border-rbtBorder rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-black/50 border-b border-rbtBorder text-gray-400 uppercase font-heading">
+                                <tr>
+                                    <th class="p-4">Match ID</th>
+                                    <th class="p-4">Teams</th>
+                                    <th class="p-4">Court</th>
+                                    <th class="p-4">Time</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-rbtBorder/50 font-medium text-white">
+                                <tr>
+                                    <td class="p-4 font-mono text-rbtOrange">#QF-01</td>
+                                    <td class="p-4 font-bold">Rongai Heat vs Matatu Kings</td>
+                                    <td class="p-4 text-gray-300">Court 1</td>
+                                    <td class="p-4 text-gray-300">14:00 EAT</td>
+                                    <td class="p-4"><span class="bg-red-600 text-white font-bold px-2 py-0.5 rounded text-[10px]">LIVE</span></td>
+                                    <td class="p-4 text-right">
+                                        <button onclick="toast('Match updated')" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black px-3 py-1.5 rounded font-bold transition">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-mono text-rbtOrange">#QF-02</td>
+                                    <td class="p-4 font-bold">Oloolua Ballers vs Kware Titans</td>
+                                    <td class="p-4 text-gray-300">Court 1</td>
+                                    <td class="p-4 text-gray-300">12:30 EAT</td>
+                                    <td class="p-4"><span class="bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px]">FINAL</span></td>
+                                    <td class="p-4 text-right">
+                                        <button onclick="toast('Match updated')" class="bg-rbtBorder hover:bg-rbtOrange hover:text-black px-3 py-1.5 rounded font-bold transition">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-4 font-mono text-rbtOrange">#QF-03</td>
+                                    <td class="p-4 font-bold">Sironik Squad vs Maasai Lodge Ballers</td>
+                                    <td class="p-4 text-gray-300">Court 2</td>
+                                    <td class="p-4 text-gray-300">16:30 EAT</td>
+                                    <td class="p-4"><span class="bg-rbtGold/10 text-rbtGold font-bold px-2 py-0.5 rounded text-[10px]">UPCOMING</span></td>
+                                    <td class="p-4 text-right">
+                                        <button onclick="toast('Match marked LIVE!')" class="bg-rbtOrange text-black px-3 py-1.5 rounded font-bold transition">Make Live</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODULE 3: TEAM VERIFICATION & ROSTERS -->
+                <div id="atab-teams" class="admin-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Team Verification & M-Pesa Desk</h3>
+                        <p class="text-gray-400 text-sm">Approve team applications and verify transaction IDs.</p>
+                    </div>
+
+                    <div class="bg-rbtCard border border-rbtBorder rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-black/50 border-b border-rbtBorder text-gray-400 uppercase font-heading">
+                                <tr>
+                                    <th class="p-4">Team Name</th>
+                                    <th class="p-4">Captain</th>
+                                    <th class="p-4">Phone</th>
+                                    <th class="p-4">M-Pesa Ref</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-teams-table-body" class="divide-y divide-rbtBorder/50 font-medium text-white">
+                                <tr>
+                                    <td class="p-4 font-bold">Rongai Titans</td>
+                                    <td class="p-4">Brian Kiprono</td>
+                                    <td class="p-4 font-mono">0712345678</td>
+                                    <td class="p-4 font-mono text-rbtGold">QHX892K1L9</td>
+                                    <td class="p-4"><span class="bg-rbtGold/10 text-rbtGold px-2 py-0.5 rounded font-bold">PENDING</span></td>
+                                    <td class="p-4 text-right space-x-1">
+                                        <button onclick="approveTeam(this)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold transition">Approve</button>
+                                        <button onclick="rejectTeam(this)" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded font-bold transition">Reject</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODULE 4: FAN ZONE & DJ CONTROL -->
+                <div id="atab-atmosphere" class="admin-tab-content hidden space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Fan Zone & DJ Hype Soundboard</h3>
+                        <p class="text-gray-400 text-sm">Control MVP voting polls and trigger courtside stadium hype announcements.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4">
+                            <h4 class="font-heading font-bold text-lg text-white">MVP Voting Poll Manager</h4>
+                            <p class="text-xs text-gray-400">Toggle live MVP fan voting on the public website.</p>
+                            <div class="flex items-center gap-3 pt-2">
+                                <button onclick="toast('MVP Voting OPENED on public portal!')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-bold text-xs uppercase px-4 py-2.5 rounded">Open Voting</button>
+                                <button onclick="toast('MVP Voting CLOSED!')" class="bg-red-600 hover:bg-red-500 text-white font-heading font-bold text-xs uppercase px-4 py-2.5 rounded">Close Voting</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-2xl space-y-4">
+                            <h4 class="font-heading font-bold text-lg text-white">DJ & Announcer Hype Soundboard</h4>
+                            <p class="text-xs text-gray-400">Trigger courtside banner alerts across the public fan site instantly.</p>
+                            <div class="grid grid-cols-2 gap-2 pt-2">
+                                <button onclick="triggerHypeAlert('🔥 KEVIN MAINA IS ON FIRE!')" class="bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold text-xs uppercase p-3 rounded transition">🔥 On Fire Alert</button>
+                                <button onclick="triggerHypeAlert('🛡️ LOCK DOWN DEFENSE!')" class="bg-rbtBorder hover:bg-white hover:text-black text-white font-heading font-bold text-xs uppercase p-3 rounded transition">🛡️ Defense Alert</button>
+                                <button onclick="triggerHypeAlert('⚡ BUZZER BEATER SHOT!')" class="bg-rbtGold hover:bg-amber-400 text-black font-heading font-bold text-xs uppercase p-3 rounded transition">⚡ Buzzer Beater</button>
+                                <button onclick="triggerHypeAlert('⚠️ TECHNICAL FOUL CALLED!')" class="bg-red-600 hover:bg-red-500 text-white font-heading font-bold text-xs uppercase p-3 rounded transition">⚠️ Tech Foul</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JAVASCRIPT STATE & LOGIC -->
+    
+<div id="toast" role="status" class="hidden fixed left-1/2 -translate-x-1/2 z-[100] bg-rbtCard border border-rbtOrange text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-2xl max-w-[90vw] text-center" style="bottom:calc(16px + env(safe-area-inset-bottom,0px))"></div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

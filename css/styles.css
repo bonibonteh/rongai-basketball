@@ -1,0 +1,36 @@
+body {
+            background-color: #0c0e12;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            margin: 0;
+        }
+        .font-heading {
+            font-family: 'Chakra Petch', sans-serif;
+        }
+        /* Custom scrollbar for inner tab panels */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #161a22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3342;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff5500;
+        }
+        .urban-grid {
+            background-image: radial-gradient(circle at 2px 2px, rgba(255, 85, 0, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    
+        :root { color-scheme: dark; --bg: #0c0e12; --fg: #f3f4f6; }
+        html, body { height: 100%; }
+        body { background: var(--bg); color: var(--fg); }
+        .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)) !important; padding-right: max(16px, env(safe-area-inset-right, 0px)) !important; }
+        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #ffb700; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
