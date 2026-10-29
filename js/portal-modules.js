@@ -384,4 +384,7 @@
     $$('[data-rest]', main).forEach((b) => b.onclick = guard(async () => { if (b.dataset.a === '1') await rpc('restore_match', { p_match_id: b.dataset.rest }); else await rpc('transition_match', { p_match_id: b.dataset.rest, p_to: 'scheduled' }); toast('Game restored.'); again(); }));
   }
   P.modules.controls = { render: controlsRender, watch: ['matches'] };
+  // Standings & Results is a direct navigation shortcut to the verified previous-results
+  // workflow. Approved final scores drive the public standings automatically.
+  P.modules.standings = { render: controlsRender, watch: ['matches'] };
 })();
