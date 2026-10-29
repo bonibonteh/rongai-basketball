@@ -160,10 +160,36 @@
       const r = await P.dialog({ title: 'Assign a scorekeeper', submit: 'Assign', fields: [{ name: 'u', label: 'Scorekeeper', type: 'select', options: sks.map((o) => ({ value: o.id, label: o.name })) }] }); if (!r) return;
       const { error } = await sb.from('official_assignments').insert({ match_id: b.dataset.assign, user_id: r.u, assignment_role: 'scorekeeper' }); if (error) throw error; toast('Scorekeeper assigned.'); again();
     }));
-    $$('[data-edit]', main).forEach((b) => b.onclick = guard(async () => {
+    $('[data-edit]', main).forEach((b) => b.onclick = guard(async () => {
       const m = matches.find((x) => x.id === b.dataset.edit);
-      const r = await P.dialog({ title: 'Edit fixture', submit: 'Save', fields: [{ name: 't', label: 'Tip-off', type: 'datetime-local', value: toLocalInput(m.scheduled_at), required: true }, { name: 'c', label: 'Court', value: m.court }, { name: 'r', label: 'Round', value: m.round }] }); if (!r) return;
-      const { error } = await sb.from('matches').update({ scheduled_at: new Date(r.t).toISOString(), court: r.c || m.court, round: r.r || m.round }).eq('id', m.id); if (error) throw error; toast('Fixture saved.'); again();
+      if (!m) return toast('This fixture could not be found. Refresh and try again.', 'error');
+      // Fixture managers can correct the matchup as well as the date, court and round.
+      const teamOptions = teams.map((t) => ({ value: t.id, label: t.name }));
+      const r = await P.dialog({
+        title: 'Edit fixture',
+        intro: 'Update the teams, tip-off time, court or round. Changes are saved to the tournament database and reflected on the public fixtures when published.',
+        submit: 'Save fixture',
+        fields: [
+          { name: 'h', label: 'Home team', type: 'select', options: teamOptions, value: m.home_team_id, required: true },
+          { name: 'a', label: 'Away team', type: 'select', options: teamOptions, value: m.away_team_id, required: true },
+          { name: 't', label: 'Tip-off', type: 'datetime-local', value: toLocalInput(m.scheduled_at), required: true },
+          { name: 'c', label: 'Court', value: m.court || 'Court 1', required: true },
+          { name: 'r', label: 'Round / pool', value: m.round || 'Pool', required: true }
+        ]
+      });
+      if (!r) return;
+      if (r.h === r.a) return toast('Choose two different teams.', 'error');
+      if (!r.t || Number.isNaN(new Date(r.t).getTime())) return toast('Enter a valid tip-off date and time.', 'error');
+      const { error } = await sb.from('matches').update({
+        home_team_id: r.h,
+        away_team_id: r.a,
+        scheduled_at: new Date(r.t).toISOString(),
+        court: (r.c || '').trim() || 'Court 1',
+        round: (r.r || '').trim() || 'Pool'
+      }).eq('id', m.id);
+      if (error) throw error;
+      toast('Fixture saved. Public fixtures will update automatically when published.');
+      again();
     }));
   }
   P.modules.fixtures = { render: fixturesRender, watch: ['matches'] };
