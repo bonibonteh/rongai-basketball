@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Official Portal | Rongai Basketball League</title>
+<link rel="icon" type="image/svg+xml" href="assets/rongai-basketball-favicon.svg">
+<meta name="theme-color" content="#101319">
+<meta name="robots" content="noindex">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="js/tailwind-config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body { overflow: hidden; }
+  #root { height: 100%; }
+  a:focus-visible, [role=tab]:focus-visible { outline: 2px solid #ffb700; outline-offset: 2px; }
+</style>
+</head>
+<body class="urban-grid">
+<div id="root" aria-live="polite"></div>
+<div id="toast" role="status" class="hidden"></div>
+<script src="js/config.js"></script>
+<script src="js/rbt-client.js"></script>
+<script src="js/portal-core.js"></script>
+<script src="js/portal-modules.js"></script>
+<script>
+  // The portal never renders workspace data until a valid session and an active official profile are confirmed.
+  window.RBT.P && window.RBT.P.boot();
+</script>
+</body>
+</html>
