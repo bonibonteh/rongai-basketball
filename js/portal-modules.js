@@ -160,7 +160,7 @@
       const r = await P.dialog({ title: 'Assign a scorekeeper', submit: 'Assign', fields: [{ name: 'u', label: 'Scorekeeper', type: 'select', options: sks.map((o) => ({ value: o.id, label: o.name })) }] }); if (!r) return;
       const { error } = await sb.from('official_assignments').insert({ match_id: b.dataset.assign, user_id: r.u, assignment_role: 'scorekeeper' }); if (error) throw error; toast('Scorekeeper assigned.'); again();
     }));
-    $('[data-edit]', main).forEach((b) => b.onclick = guard(async () => {
+    $$('[data-edit]', main).forEach((b) => b.onclick = guard(async () => {
       const m = matches.find((x) => x.id === b.dataset.edit);
       if (!m) return toast('This fixture could not be found. Refresh and try again.', 'error');
       // Fixture managers can correct the matchup as well as the date, court and round.
