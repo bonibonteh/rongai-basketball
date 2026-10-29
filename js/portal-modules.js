@@ -352,13 +352,22 @@
   // =====================================================================================
   async function controlsRender(main) {
     const run = (p) => p.then((r) => r.data || [], () => []);
-    const [matches, events, audit] = await Promise.all([
+    const [rawMatches, teams, events, audit] = await Promise.all([
       q(sb.from('matches').select(SEL).order('scheduled_at', { ascending: false }).limit(200)),
+      q(sb.from('teams').select('id,name')),
       run(sb.from('match_events').select('*, match:matches(home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name))').in('event_type', ['score', 'undo_score', 'correction']).order('created_at', { ascending: false }).limit(20)),
       can('audit.read') ? run(sb.from('audit_logs').select('*').order('at', { ascending: false }).limit(50)) : []
     ]);
+    // Resolve names from the teams table as a fallback if a relationship embed is null.
+    const teamById = new Map(teams.map((t) => [String(t.id), t]));
+    const matches = rawMatches.map((m) => ({
+      ...m,
+      home: m.home || teamById.get(String(m.home_team_id)) || { name: 'Home team name unavailable' },
+      away: m.away || teamById.get(String(m.away_team_id)) || { name: 'Away team name unavailable' }
+    }));
     const live = matches.filter((m) => m.status === 'live' && !m.archived_at), disputed = matches.filter((m) => m.status === 'under_review' && !m.archived_at);
-    const finals = matches.filter((m) => m.status === 'final' && !m.archived_at).slice(0, 15);
+    // Include every completed game, including older results beyond the previous 15.
+    const finals = matches.filter((m) => m.status === 'final' && !m.archived_at);
     const gone = matches.filter((m) => m.archived_at || m.status === 'cancelled');
     const S = P.S;
     main.innerHTML = `<div class="max-w-6xl mx-auto space-y-4">
