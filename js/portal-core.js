@@ -358,6 +358,7 @@
       { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', show: true },
       { id: 'courtside', label: 'Courtside', icon: 'activity', show: can('matches.score') },
       { id: 'fixtures', label: 'Fixtures', icon: 'calendar-days', show: can('matches.manage') || can('matches.view_all') },
+      { id: 'standings', label: 'Standings & Results', icon: 'trophy', show: can('matches.correct') || can('matches.manage') || can('audit.read') },
       { id: 'teams', label: 'Teams', icon: 'users', show: can('teams.review'), badge: 'teams' },
       { id: 'reports', label: 'Reports', icon: 'clipboard-list', show: can('reports.submit') || can('reports.review') },
       { id: 'announcements', label: 'Announcements', icon: 'megaphone', show: can('content.manage') || can('content.publish'), badge: 'announcements' },
