@@ -360,6 +360,8 @@
       { id: 'fixtures', label: 'Fixtures', icon: 'calendar-days', show: can('matches.manage') || can('matches.view_all') },
       { id: 'standings', label: 'Standings & Results', icon: 'trophy', show: can('matches.correct') || can('matches.manage') || can('audit.read') || can('standings.manage') || can('results.record') },
       { id: 'teams', label: 'Teams', icon: 'users', show: can('teams.review'), badge: 'teams' },
+      { id: 'merch', label: 'Street Culture Merch', icon: 'shopping-bag', show: can('merch.manage') },
+      { id: 'ballers', label: 'Rongai Ballers', icon: 'contact-round', show: can('roster.manage') || can('teams.review') },
       { id: 'reports', label: 'Reports', icon: 'clipboard-list', show: can('reports.submit') || can('reports.review') },
       { id: 'announcements', label: 'Announcements', icon: 'megaphone', show: can('content.manage') || can('content.publish'), badge: 'announcements' },
       { id: 'tasks', label: 'Tasks', icon: 'list-checks', show: true, badge: 'tasks' },
