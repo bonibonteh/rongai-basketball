@@ -11,13 +11,14 @@
     return new Promise(resolve=>{
       const w=document.createElement('div'); w.className='fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/70 p-4';
       w.innerHTML='<form class="bg-rbtCard border border-rbtBorder rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-5 space-y-3"><h3 class="font-heading font-bold text-lg text-white">'+esc(title)+'</h3>'+
-        fields.map(f=>'<label class="block text-xs font-bold uppercase text-gray-300">'+esc(f.label)+(f.type==='textarea'?'<textarea name="'+f.name+'" rows="3" class="mt-1 w-full bg-black/50 border border-rbtBorder rounded-lg p-2.5 text-sm text-white normal-case font-normal">'+esc(initial[f.name]??f.value??'')+'</textarea>':'<input name="'+f.name+'" type="'+(f.type||'text')+'" value="'+esc(initial[f.name]??f.value??'')+'" '+(f.required?'required':'')+' class="mt-1 w-full bg-black/50 border border-rbtBorder rounded-lg p-2.5 text-sm text-white normal-case font-normal">')+'</label>').join('')+
+        fields.map(f=>'<label class="block text-xs font-bold uppercase text-gray-300">'+esc(f.label)+(f.type==='file'?'<input name="'+f.name+'" type="file" accept="image/jpeg,image/png,image/webp" class="mt-1 w-full text-xs text-gray-300">':f.type==='textarea'?'<textarea name="'+f.name+'" rows="3" class="mt-1 w-full bg-black/50 border border-rbtBorder rounded-lg p-2.5 text-sm text-white normal-case font-normal">'+esc(initial[f.name]??f.value??'')+'</textarea>':'<input name="'+f.name+'" type="'+(f.type||'text')+'" value="'+esc(initial[f.name]??f.value??'')+'" '+(f.required?'required':'')+' class="mt-1 w-full bg-black/50 border border-rbtBorder rounded-lg p-2.5 text-sm text-white normal-case font-normal">')+'</label>').join('')+
         '<p class="hidden text-xs text-red-300" data-err></p><div class="flex justify-end gap-2"><button type="button" data-cancel class="px-4 py-2 rounded-lg border border-rbtBorder text-xs text-gray-300">Cancel</button><button class="px-4 py-2 rounded-lg bg-rbtOrange text-black text-xs font-bold uppercase">Save</button></div></form>';
       document.body.appendChild(w); const f=$('form',w);
       $('[data-cancel]',w).onclick=()=>{w.remove();resolve(null)};
-      f.onsubmit=e=>{e.preventDefault();const out={};fields.forEach(x=>out[x.name]=f.elements[x.name].value.trim());w.remove();resolve(out)};
+      f.onsubmit=e=>{e.preventDefault();const out={};fields.forEach(x=>out[x.name]=x.type==='file'?f.elements[x.name].files[0]||null:f.elements[x.name].value.trim());w.remove();resolve(out)};
     });
   }
+  async function uploadImage(bucket,owner,file,maxBytes){if(!file)return null;if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Choose a JPG, PNG or WebP image.');if(file.size>maxBytes)throw new Error('Image exceeds '+Math.round(maxBytes/1048576)+' MB.');const ext={ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];const path=owner+'/'+Date.now()+'.'+ext;const {error}=await sb.storage.from(bucket).upload(path,file,{contentType:file.type,upsert:true});if(error)throw error;return path;}
   async function merchRender(main){
     if(!can('merch.manage')) return main.innerHTML=empty('You do not have permission to manage merchandise.');
     const rows=await q(sb.from('merch_products').select('*').order('display_order').order('created_at',{ascending:false}));
@@ -28,9 +29,9 @@
       {name:'category',label:'Category',value:'Apparel'},{name:'price_kes',label:'Price (KES)',type:'number',value:'0'},
       {name:'sizes',label:'Sizes (comma separated)'},{name:'colours',label:'Colours (comma separated)'},
       {name:'stock',label:'Stock quantity',type:'number',value:'0'},{name:'availability',label:'Availability: available / sold_out / coming_soon',value:'available'},
-      {name:'image_url',label:'Product image URL (optional)'},{name:'status',label:'Status: draft / published / archived',value:'draft'},
+      {name:'image_file',label:'Upload product image (JPG, PNG or WebP, up to 3 MB)',type:'file'},{name:'status',label:'Status: draft / published / archived',value:'draft'},
       {name:'display_order',label:'Display order',type:'number',value:'0'}
-    ],{...p,sizes:(p.sizes||[]).join(', '),colours:(p.colours||[]).join(', '),image_url:p.image_paths?.[0]&&storageUrl('merch-images',p.image_paths[0])});
+    ],{...p,sizes:(p.sizes||[]).join(', '),colours:(p.colours||[]).join(', ')});
       if(!v)return;
       const imagePath=v.image_url&&/^https:\/\//.test(v.image_url)?[v.image_url]:[];
       const patch={name:v.name,description:v.description,category:v.category||'General',price_kes:Number(v.price_kes||0),sizes:split(v.sizes),colours:split(v.colours),stock:Math.max(0,Number(v.stock||0)),availability:v.availability||'available',image_paths:imagePath,is_featured:p.is_featured||false,status:v.status||'draft',display_order:Number(v.display_order||0)};
@@ -57,10 +58,11 @@
       {name:'full_name',label:'Full name',required:true},{name:'team_id',label:'Team ID (select from team list)',value:p.team_id||teams[0]?.id||''},
       {name:'jersey_no',label:'Jersey number',type:'number'},{name:'position',label:'Position'},{name:'height_cm',label:'Height (cm)',type:'number'},
       {name:'nationality',label:'Nationality'},{name:'bio',label:'Player biography',type:'textarea'},
-      {name:'status',label:'Status: active / injured / unavailable / suspended / archived',value:p.status||'active'}
+      {name:'status',label:'Status: active / injured / unavailable / suspended / archived',value:p.status||'active'},
+      {name:'photo_file',label:'Player photograph (JPG, PNG or WebP, up to 2 MB)',type:'file'}
     ],p);if(!v)return;
       const patch={full_name:v.full_name,team_id:v.team_id,jersey_no:v.jersey_no===''?null:Number(v.jersey_no),position:v.position||null,height_cm:v.height_cm===''?null:Number(v.height_cm),nationality:v.nationality||null,bio:v.bio||null,status:v.status||'active',is_published:true};
-      const r=id?await sb.from('players').update(patch).eq('id',id):await sb.from('players').insert(patch);if(r.error)throw r.error;toast('Player saved.');ballersRender(main);
+      const r=id?await sb.from('players').update(patch).eq('id',id).select('id').single():await sb.from('players').insert(patch).select('id').single();if(r.error)throw r.error;const photo=await uploadImage('player-photos',r.data.id,v.photo_file,2097152);if(photo){const u=await sb.from('players').update({photo_path:photo}).eq('id',r.data.id);if(u.error)throw u.error;}toast('Player saved.');ballersRender(main);
     };
     $('#bp-add',main).onclick=guard(()=>playerForm(null));
     $$('[data-pe]',main).forEach(b=>b.onclick=guard(()=>playerForm(b.dataset.pe)));
