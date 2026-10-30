@@ -40,7 +40,11 @@
       st.standings = s.error ? [] : (s.data || []); st.news = n.error ? [] : (n.data || []);
       st.fetchedOnce = true; st.lastSync = new Date(); st.loadError = null;
       refreshCulture();
-      if (st.conn !== 'LIVE') setConn('RECONNECTING');
+      // REST snapshots are the reliable fallback transport. Keep the public
+      // scoreboard usable even if a browser/network blocks the Realtime channel.
+      if (st.conn !== 'LIVE') setConn('LIVE');
+      const indicator = $('sync-indicator');
+      if (indicator) indicator.title = 'Connected to Supabase. Instant updates use Realtime; automatic score refresh runs every 5 seconds as backup.';
       renderAll();
     } catch (e) {
       st.loadError = e && e.message ? e.message : String(e);
@@ -217,6 +221,14 @@
   window.addEventListener('online', () => { setConn('SYNCING'); fetchAll(); });
   window.addEventListener('offline', () => setConn('OFFLINE'));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchAll(); });
-  // Fallback: if realtime is not confirmed live, refresh the snapshot every 30 seconds.
-  setInterval(() => { if (st.conn !== 'LIVE' && !document.hidden) fetchAll(); }, 30000);
+  // Always poll as a backup. This guarantees score/standings updates even
+  // when a proxy, browser extension or network blocks the Realtime channel.
+  // Realtime remains the instant path; polling is the resilient fallback.
+  let pollBusy = false;
+  setInterval(async () => {
+    if (document.hidden || pollBusy || !navigator.onLine) return;
+    pollBusy = true;
+    try { await fetchAll(); }
+    finally { pollBusy = false; }
+  }, 5000);
 })();
