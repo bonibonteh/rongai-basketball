@@ -123,8 +123,8 @@
 
   function renderStandings() {
     const body = $('standings-body'); if (!body) return;
-    body.innerHTML = st.standings.length ? st.standings.map((t, i) => '<tr class="' + (i === 0 ? 'text-white' : 'text-gray-300') + '"><td class="py-2.5">' + (i + 1) + '. ' + esc(t.team_name) + '</td><td class="text-center">' + t.played + '</td><td class="text-center">' + t.wins + '</td><td class="text-center">' + t.losses + '</td><td class="text-right font-bold text-rbtOrange">' + t.points + '</td></tr>').join('')
-      : '<tr><td colspan="5" class="py-4 text-gray-400">' + (st.fetchedOnce ? 'Standings appear after the first final result.' : 'Loading…') + '</td></tr>';
+    body.innerHTML = st.standings.length ? st.standings.map((t) => '<tr class="' + (t.rank === 1 ? 'text-white' : 'text-gray-300') + '"><td class="py-2.5">' + t.rank + '. ' + esc(t.team_name) + '</td><td class="text-center">' + t.played + '</td><td class="text-center">' + t.wins + '</td><td class="text-center">' + t.losses + '</td><td class="text-right font-bold text-rbtOrange">' + t.points + '</td></tr>').join('')
+      : '<tr><td colspan="5" class="py-4 text-gray-400">' + (st.fetchedOnce ? 'No teams registered yet.' : 'Loading…') + '</td></tr>';
   }
 
   function renderBracket() {
