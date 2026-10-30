@@ -193,7 +193,27 @@
   if (!RB.configured) { setConn('OFFLINE'); renderAll(); return; }
   renderAll();
   refreshCulture();
-  fetchAll().then(() => { subscribe(); });
+
+  // Start the WebSocket immediately. Do not make live-score subscriptions wait
+  // for the initial REST snapshot: a slow/hung database read must not leave the
+  // entire public site stuck forever on "SYNCING".
+  try {
+    subscribe();
+  } catch (e) {
+    console.error('[RBT] Could not start realtime subscription:', e);
+    setConn('RECONNECTING');
+  }
+  // Bound the first snapshot so the UI can report a failure instead of waiting forever.
+  const firstSnapshot = fetchAll();
+  Promise.race([
+    firstSnapshot,
+    new Promise((_, reject) => window.setTimeout(() => reject(new Error('Live score request timed out after 12 seconds.')), 12000))
+  ]).catch((e) => {
+    st.loadError = e && e.message ? e.message : String(e);
+    console.error('[RBT] Initial live score load timed out or failed:', e);
+    if (st.conn !== 'LIVE') setConn('OFFLINE');
+    renderAll();
+  });
   window.addEventListener('online', () => { setConn('SYNCING'); fetchAll(); });
   window.addEventListener('offline', () => setConn('OFFLINE'));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchAll(); });
