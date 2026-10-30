@@ -39,6 +39,7 @@
       st.matches = m.data || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
       st.standings = (s.data || []); st.news = (n.data || []);
       st.fetchedOnce = true; st.lastSync = new Date();
+      refreshCulture();
       if (st.conn === 'OFFLINE' && navigator.onLine) setConn('SYNCING');
       renderAll();
     } catch (e) {
@@ -58,6 +59,9 @@
         else fetchAll(); // a game appeared: reload to get team names
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => refreshNews())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => refreshCulture())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'baller_trading_cards' }, () => refreshCulture())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merch_products' }, () => refreshCulture())
       .subscribe((s) => {
         if (s === 'SUBSCRIBED') setConn('LIVE');
         else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('RECONNECTING');
@@ -148,6 +152,31 @@
     const b = $('hype-banner'); if (b) { const ban = st.news.find((a) => a.is_banner); if (ban) { b.textContent = ban.title + (ban.body ? ' - ' + ban.body : ''); b.classList.remove('hidden'); } else b.classList.add('hidden'); }
   }
 
+  function publicAsset(bucket,path){return path ? RB.sb.storage.from(bucket).getPublicUrl(path).data.publicUrl : '';}
+  function renderCulture(roster,cards,products){
+    const rosterEl=$('ballers-roster'), cardsEl=$('ballers-cards'), merchEl=$('merch-products');
+    if(rosterEl){
+      rosterEl.innerHTML=roster.length?roster.map(p=>'<article class="bg-rbtCard border border-rbtBorder rounded-2xl overflow-hidden hover:border-rbtOrange transition">'+
+        (p.photo_path?'<img src="'+esc(publicAsset('player-photos',p.photo_path))+'" alt="'+esc(p.full_name)+'" class="w-full h-64 object-cover object-top">':'<div class="h-64 bg-black/40 flex items-center justify-center text-5xl font-heading font-bold text-rbtOrange">'+esc(String(p.full_name||'?').split(/\\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+
+        '<div class="p-5"><div class="flex items-center justify-between gap-2"><span class="text-rbtGold text-xs font-bold uppercase">'+esc(p.position||'Player')+'</span><span class="text-xs text-gray-400">#'+esc(p.jersey_no??'—')+'</span></div><h4 class="font-heading font-bold text-xl text-white mt-2">'+esc(p.full_name)+'</h4><p class="text-xs text-gray-400">'+esc(p.team?.name||'Rongai Ballers')+'</p>'+(p.bio?'<p class="text-sm text-gray-300 mt-3">'+esc(p.bio)+'</p>':'')+'</div></article>').join(''):'<p class="text-sm text-gray-400">Player profiles will appear here when the roster is published.</p>';
+      const search=$('ballers-search'); if(search&&!search.dataset.bound){search.dataset.bound='1';search.addEventListener('input',()=>{const term=search.value.toLowerCase();rosterEl.querySelectorAll('article').forEach((el)=>el.classList.toggle('hidden',!el.textContent.toLowerCase().includes(term)));});}
+    }
+    if(cardsEl){
+      cardsEl.innerHTML=cards.length?cards.map(c=>{const p=c.player||{},stats=c.stats||{},photo=p.photo_path?publicAsset('player-photos',p.photo_path):'';return '<article class="relative overflow-hidden rounded-2xl border border-rbtGold/50 bg-gradient-to-br from-rbtCard via-black to-rbtCard p-4 min-h-64 shadow-xl"><div class="absolute inset-0 opacity-10 pointer-events-none" style="background:linear-gradient(135deg,#ff6a00,transparent 50%,#f7bd43)"></div><div class="relative flex justify-between text-[10px] uppercase tracking-widest font-bold text-rbtGold"><span>'+esc(c.collection_name)+'</span><span>'+esc(c.edition)+'</span></div>'+(photo?'<img src="'+esc(photo)+'" alt="" class="relative w-full h-36 object-cover object-top rounded-xl mt-3">':'<div class="relative h-36 flex items-center justify-center text-4xl font-heading font-black text-rbtOrange">'+esc(String(p.full_name||'RB').split(/\\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+'<div class="relative mt-3"><h4 class="font-heading font-black text-lg text-white">'+esc(p.full_name||'Rongai Baller')+'</h4><p class="text-[10px] text-gray-400 uppercase">#'+esc(p.jersey_no??'—')+' · '+esc(p.position||'Player')+' · '+esc(c.season)+'</p><div class="flex flex-wrap gap-2 mt-2">'+Object.entries(stats).slice(0,3).map(([k,v])=>'<span class="text-[10px] bg-white/10 rounded px-2 py-1 text-gray-200">'+esc(k)+': '+esc(v)+'</span>').join('')+'</div><p class="text-[10px] text-rbtGold uppercase font-bold mt-3">'+esc(c.rarity)+' edition</p></div></article>'}).join(''):'<p class="text-sm text-gray-400">New trading cards will be revealed here as they are published.</p>';
+    }
+    if(merchEl){
+      merchEl.innerHTML=products.length?products.map(p=>{const path=(p.image_paths||[])[0],src=path&&/^https:\\/\\//.test(path)?path:publicAsset('merch-images',path);return '<article class="bg-rbtCard border border-rbtBorder rounded-2xl overflow-hidden hover:border-rbtOrange transition">'+(src?'<img src="'+esc(src)+'" alt="'+esc(p.name)+'" class="w-full h-64 object-cover">':'<div class="h-64 bg-black/40 flex items-center justify-center font-heading font-black text-2xl text-rbtOrange">STREET CULTURE</div>')+'<div class="p-5 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[10px] text-rbtGold uppercase font-bold">'+esc(p.category)+'</span>'+(p.is_featured?'<span class="text-[10px] text-rbtOrange uppercase font-bold">Featured</span>':'')+'</div><h4 class="font-heading font-bold text-lg text-white">'+esc(p.name)+'</h4><p class="text-sm text-gray-400">'+esc(p.description||'')+'</p><div class="flex items-center justify-between pt-2"><b class="text-rbtGold text-lg">'+(Number(p.price_kes)>0?'KES '+Number(p.price_kes).toLocaleString('en-KE'):'Price on request')+'</b><span class="text-xs '+(p.availability==='available'?'text-emerald-400':'text-gray-400')+'">'+esc(String(p.availability||'available').replace('_',' '))+'</span></div>'+(p.sizes?.length?'<p class="text-[10px] text-gray-500">Sizes: '+esc(p.sizes.join(', '))+'</p>':'')+'</div></article>'}).join(''):'<p class="text-sm text-gray-400">Official merchandise will appear here when products are published.</p>';
+    }
+  }
+  async function refreshCulture(){
+    if(!RB.sb)return;
+    const [pr,cr,mr]=await Promise.all([
+      RB.sb.from('players').select('id,team_id,full_name,jersey_no,position,photo_path,bio,status,team:teams(name)').eq('is_published',true).is('archived_at',null).neq('status','archived').order('full_name'),
+      RB.sb.from('baller_trading_cards').select('*,player:players(id,full_name,jersey_no,position,photo_path)').eq('status','published').order('season',{ascending:false}),
+      RB.sb.from('merch_products').select('*').eq('status','published').order('display_order').order('created_at',{ascending:false})
+    ]);
+    renderCulture(pr.error?[]:(pr.data||[]),cr.error?[]:(cr.data||[]),mr.error?[]:(mr.data||[]));
+  }
   function renderAll() { renderTicker(); renderMatches(); renderStandings(); renderBracket(); renderStage(); renderNews(); }
   L.setFilter = (f) => { st.filter = f; renderMatches(); };
 
@@ -161,6 +190,7 @@
   // ----- start -----
   if (!RB.configured) { setConn('OFFLINE'); renderAll(); return; }
   renderAll();
+  refreshCulture();
   fetchAll().then(() => { subscribe(); });
   window.addEventListener('online', () => { setConn('SYNCING'); fetchAll(); });
   window.addEventListener('offline', () => setConn('OFFLINE'));
