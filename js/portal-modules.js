@@ -395,5 +395,4 @@
   P.modules.controls = { render: controlsRender, watch: ['matches'] };
   // Standings & Results is a direct navigation shortcut to the verified previous-results
   // workflow. Approved final scores drive the public standings automatically.
-  P.modules.standings = { render: controlsRender, watch: ['matches'] };
 })();
