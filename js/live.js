@@ -37,13 +37,15 @@
       ]);
       if (m.error) throw m.error;
       st.matches = m.data || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
-      st.standings = (s.data || []); st.news = (n.data || []);
-      st.fetchedOnce = true; st.lastSync = new Date();
+      st.standings = s.error ? [] : (s.data || []); st.news = n.error ? [] : (n.data || []);
+      st.fetchedOnce = true; st.lastSync = new Date(); st.loadError = null;
       refreshCulture();
-      if (st.conn === 'OFFLINE' && navigator.onLine) setConn('SYNCING');
+      if (st.conn !== 'LIVE') setConn('RECONNECTING');
       renderAll();
     } catch (e) {
-      if (st.conn === 'LIVE') setConn('RECONNECTING'); else if (!navigator.onLine) setConn('OFFLINE');
+      st.loadError = e && e.message ? e.message : String(e);
+      console.error('[RBT] Live score snapshot failed:', e);
+      if (st.conn === 'LIVE') setConn('RECONNECTING'); else setConn('OFFLINE');
       renderAll();
     }
   }
@@ -95,7 +97,7 @@
     else if (st.fetchedOnce) parts.push('<span class="text-gray-400">No game is live right now.</span>');
     if (next) parts.push('<span class="text-gray-400">Next: ' + esc(next.home.name) + ' vs ' + esc(next.away.name) + ' (' + esc(when(next.scheduled_at)) + ')</span>');
     if (st.conn !== 'LIVE' && st.fetchedOnce) parts.push('<span class="text-amber-300">' + st.conn + ': showing last update</span>');
-    el.innerHTML = parts.join('<span class="text-rbtBorder">•</span>') || '<span class="text-gray-400">Connecting to live scores…</span>';
+    el.innerHTML = parts.join('<span class="text-rbtBorder">•</span>') || (st.fetchedOnce ? '<span class="text-gray-400">No published games yet. Live score connection will keep retrying.</span>' : st.conn === 'OFFLINE' ? '<span class="text-red-300">Could not load live scores. Check the database connection and reload.</span>' : '<span class="text-gray-400">Connecting to live scores…</span>');
   }
 
   function spotlight(m) {
