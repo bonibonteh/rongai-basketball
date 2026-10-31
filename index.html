@@ -194,68 +194,19 @@
                     </div>
                 </div>
 
-                <!-- TAB 4: RONGAI BALLERS -->
+                <!-- TAB 4: RONGAI BALLERS — database-connected player profiles and collectible cards -->
                 <div id="ptab-ballers" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h3 class="font-heading font-bold text-2xl uppercase text-white">Rongai Ballers Roster & Trading Cards</h3>
-                            <p class="text-gray-400 text-sm">Star players, stats, and holographic digital cards.</p>
-                        </div>
-                        <input type="text" placeholder="Search player or team..." class="bg-black/50 border border-rbtBorder rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-rbtOrange w-full md:w-64">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div><p class="text-rbtOrange font-heading font-bold text-xs tracking-[.2em] uppercase">Meet the talent</p>
+                        <h3 class="font-heading font-bold text-3xl uppercase text-white">Rongai Ballers</h3>
+                        <p class="text-gray-400 text-sm">Player profiles, verified stats and collectible season cards.</p></div>
+                        <input id="ballers-search" type="search" placeholder="Search player or team..." class="bg-black/50 border border-rbtBorder rounded-lg px-4 py-2 text-sm text-white w-full md:w-64">
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Player Card 1 -->
-                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
-                            <div class="absolute top-3 right-3 bg-rbtOrange/20 text-rbtOrange font-heading font-black text-xs px-2 py-0.5 rounded">PG #07</div>
-                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-rbtOrange border-2 border-rbtOrange">
-                                KB
-                            </div>
-                            <h4 class="font-heading font-bold text-lg text-center text-white">Kevin "Kevo" Maina</h4>
-                            <span class="text-xs text-gray-400 block text-center mb-4">Rongai Heat • Point Guard</span>
-                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-rbtOrange text-sm">24.5</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">APG</span><span class="font-bold text-white text-sm">8.2</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">RPG</span><span class="font-bold text-white text-sm">4.1</span></div>
-                            </div>
-                            <button onclick="toast('Opening Kevo Maina digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
-                                View Trading Card
-                            </button>
-                        </div>
-                        <!-- Player Card 2 -->
-                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
-                            <div class="absolute top-3 right-3 bg-rbtGold/20 text-rbtGold font-heading font-black text-xs px-2 py-0.5 rounded">C #23</div>
-                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-rbtGold border-2 border-rbtGold">
-                                ON
-                            </div>
-                            <h4 class="font-heading font-bold text-lg text-center text-white">Otieno "Twin Towers" Nyabola</h4>
-                            <span class="text-xs text-gray-400 block text-center mb-4">Oloolua Ballers • Center</span>
-                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-rbtGold text-sm">18.0</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">BPG</span><span class="font-bold text-white text-sm">3.8</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">RPG</span><span class="font-bold text-white text-sm">12.4</span></div>
-                            </div>
-                            <button onclick="toast('Opening Otieno Nyabola digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
-                                View Trading Card
-                            </button>
-                        </div>
-                        <!-- Player Card 3 -->
-                        <div class="bg-gradient-to-b from-rbtCard to-black border border-rbtBorder hover:border-rbtOrange p-6 rounded-2xl relative overflow-hidden group transition">
-                            <div class="absolute top-3 right-3 bg-emerald-500/20 text-emerald-400 font-heading font-black text-xs px-2 py-0.5 rounded">SG #11</div>
-                            <div class="w-20 h-20 rounded-full bg-rbtBorder mx-auto mb-4 flex items-center justify-center text-2xl font-heading font-bold text-emerald-400 border-2 border-emerald-400">
-                                CW
-                            </div>
-                            <h4 class="font-heading font-bold text-lg text-center text-white">Cliff "Sniper" Wanyama</h4>
-                            <span class="text-xs text-gray-400 block text-center mb-4">Matatu Kings • Shooting Guard</span>
-                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-rbtCard/80 border border-rbtBorder p-3 rounded-xl mb-4">
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">PPG</span><span class="font-bold text-emerald-400 text-sm">21.2</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">3P%</span><span class="font-bold text-white text-sm">46.5%</span></div>
-                                <div><span class="block text-[10px] text-gray-400 uppercase font-bold">STL</span><span class="font-bold text-white text-sm">2.1</span></div>
-                            </div>
-                            <button onclick="toast('Opening Cliff Wanyama digital holographic trading card!')" class="w-full bg-rbtBorder hover:bg-rbtOrange hover:text-black text-white font-heading font-bold text-xs uppercase py-2.5 rounded transition">
-                                View Trading Card
-                            </button>
-                        </div>
+                    <div id="ballers-roster" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"><p class="text-sm text-gray-400">Loading player roster…</p></div>
+                    <div class="pt-6 border-t border-rbtBorder">
+                        <p class="text-rbtGold font-heading font-bold text-xs tracking-[.2em] uppercase">Collect the season</p>
+                        <h4 class="font-heading font-bold text-2xl uppercase text-white mt-1">Trading Card Collection</h4>
+                        <div id="ballers-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4"><p class="text-sm text-gray-400">Loading trading cards…</p></div>
                     </div>
                 </div>
 
@@ -319,42 +270,15 @@
                     </div>
                 </div>
 
-                <!-- TAB 6: CULTURE & MERCH -->
+                <!-- TAB 6: STREET CULTURE — database-connected official merchandise -->
                 <div id="ptab-culture" class="public-tab-content hidden space-y-6 max-w-7xl mx-auto">
-                    <div>
-                        <h3 class="font-heading font-bold text-2xl uppercase text-white">Street Culture & Official Merch</h3>
-                        <p class="text-gray-400 text-sm">Food stalls, music, and official RBT '26 apparel.</p>
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div><p class="text-rbtOrange font-heading font-bold text-xs tracking-[.2em] uppercase">Wear the game</p>
+                        <h3 class="font-heading font-bold text-3xl uppercase text-white">Street Culture</h3>
+                        <p class="text-gray-400 text-sm">Official Rongai Basketball merchandise and court-side culture.</p></div>
+                        <span class="text-xs uppercase tracking-widest text-rbtGold font-bold">Official RBT collection</span>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
-                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-rbtOrange font-heading font-bold text-lg">RBT HOODIE</div>
-                            <h4 class="font-heading font-bold text-white text-base">Official RBT '26 Heavyweight Hoodie</h4>
-                            <p class="text-xs text-gray-400">Premium brushed fleece streetwear hoodie with embroidered Rongai skyline logo.</p>
-                            <div class="flex items-center justify-between pt-2">
-                                <span class="font-heading font-black text-rbtGold text-lg">KES 3,500</span>
-                                <button onclick="toast('Added Hoodie to cart!')" class="bg-rbtOrange text-black text-xs font-heading font-bold px-4 py-2 rounded">Buy Now</button>
-                            </div>
-                        </div>
-                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
-                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-rbtGold font-heading font-bold text-lg">STREETBALL TEE</div>
-                            <h4 class="font-heading font-bold text-white text-base">Asphalt Mesh Basketball Jersey</h4>
-                            <p class="text-xs text-gray-400">Breathable moisture-wicking fabric designed for peak court performance.</p>
-                            <div class="flex items-center justify-between pt-2">
-                                <span class="font-heading font-black text-rbtGold text-lg">KES 2,000</span>
-                                <button onclick="toast('Added Jersey to cart!')" class="bg-rbtOrange text-black text-xs font-heading font-bold px-4 py-2 rounded">Buy Now</button>
-                            </div>
-                        </div>
-                        <div class="bg-rbtCard border border-rbtBorder p-6 rounded-xl space-y-3">
-                            <div class="h-40 bg-rbtBorder/40 rounded-lg flex items-center justify-center text-emerald-400 font-heading font-bold text-lg">COURTSIDE VENDORS</div>
-                            <h4 class="font-heading font-bold text-white text-base">Food & Refreshment Zone</h4>
-                            <p class="text-xs text-gray-400">Enjoy local Kenyan grills, smoothies, and energy drinks right next to Court 1.</p>
-                            <div class="flex items-center justify-between pt-2">
-                                <span class="text-xs text-emerald-400 font-bold uppercase">Open All Day</span>
-                                <span class="text-xs text-gray-400">Free Entry</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="merch-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"><p class="text-sm text-gray-400">Loading official merchandise…</p></div>
                 </div>
 
                 <!-- TAB 7: REGISTER TEAM -->
