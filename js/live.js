@@ -11,6 +11,27 @@
   const when = (t) => new Date(t).toLocaleString('en-KE', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
   const SEL = '*, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)';
 
+  // The public page never touches the signed-in session. It reads with plain REST calls (anon key, 10 s timeout)
+  // and uses its own anon-only client for realtime, so a stuck auth lock can never freeze the scoreboard.
+  const CFG = window.RBT_CONFIG || {};
+  const HAS_CFG = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+  async function rest(path, body) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
+    try {
+      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/' + path, {
+        method: body ? 'POST' : 'GET', signal: ctl.signal,
+        headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+  let pub = null;
+  try {
+    if (HAS_CFG && window.supabase) pub = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  } catch (e) { pub = null; }
+
   const st = { matches: [], standings: [], news: [], filter: 'all', conn: 'SYNCING', lastSync: null, recv: {}, fetchedOnce: false };
   L.state = st;
 
@@ -28,27 +49,27 @@
 
   // ----- data -----
   async function fetchAll() {
-    if (!RB.sb) return setConn('OFFLINE');
+    if (!HAS_CFG) return setConn('OFFLINE');
     try {
-      const [m, s, n] = await Promise.all([
-        RB.sb.from('matches').select(SEL).order('scheduled_at', { ascending: true }),
-        RB.sb.rpc('get_standings'),
-        RB.sb.from('announcements').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(10)
+      const [m, s2, n] = await Promise.all([
+        rest('matches?select=' + encodeURIComponent(SEL) + '&order=scheduled_at.asc'),
+        rest('rpc/get_standings', {}).catch(() => []),
+        rest('announcements?select=*&status=eq.published&order=published_at.desc&limit=10').catch(() => [])
       ]);
-      if (m.error) throw m.error;
-      st.matches = m.data || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
-      st.standings = (s.data || []); st.news = (n.data || []);
+      st.matches = m || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
+      st.standings = s2 || []; st.news = n || [];
       st.fetchedOnce = true; st.lastSync = new Date();
-      if (st.conn === 'OFFLINE' && navigator.onLine) setConn('SYNCING');
+      if (st.conn === 'OFFLINE' || st.conn === 'SYNCING') setConn(pub ? 'SYNCING' : 'LIVE');
       renderAll();
     } catch (e) {
-      if (st.conn === 'LIVE') setConn('RECONNECTING'); else if (!navigator.onLine) setConn('OFFLINE');
+      st.failed = true;
+      setConn(navigator.onLine ? 'RECONNECTING' : 'OFFLINE');
       renderAll();
     }
   }
 
   function subscribe() {
-    const ch = RB.sb.channel('rbt-public')
+    const ch = pub.channel('rbt-public')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, (p) => {
         st.lastSync = new Date();
         if (p.eventType === 'DELETE') { st.matches = st.matches.filter((x) => x.id !== p.old.id); renderAll(); return; }
@@ -65,10 +86,9 @@
       });
     return ch;
   }
-  async function refreshStandings() { const r = await RB.sb.rpc('get_standings'); if (!r.error) { st.standings = r.data || []; renderStandings(); } }
+  async function refreshStandings() { try { st.standings = (await rest('rpc/get_standings', {})) || []; renderStandings(); } catch (e) {} }
   async function refreshNews() {
-    const r = await RB.sb.from('announcements').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(10);
-    if (!r.error) { st.news = r.data || []; renderNews(); }
+    try { st.news = (await rest('announcements?select=*&status=eq.published&order=published_at.desc&limit=10')) || []; renderNews(); } catch (e) {}
   }
 
   // ----- rendering -----
@@ -83,7 +103,7 @@
 
   function renderTicker() {
     const el = $('ticker-content'); if (!el) return;
-    if (!RB.configured) { el.innerHTML = '<span class="text-gray-400">Live scores are unavailable.</span>'; return; }
+    if (!HAS_CFG) { el.innerHTML = '<span class="text-gray-400">Live scores are unavailable.</span>'; return; }
     const live = st.matches.find((m) => m.status === 'live');
     const next = st.matches.filter((m) => ['scheduled', 'ready'].includes(m.status) && new Date(m.scheduled_at) > Date.now() - 36e5)[0];
     const parts = [];
@@ -106,7 +126,7 @@
 
   function renderMatches() {
     const sp = $('live-spotlight'), fx = $('fixtures-container'); if (!sp || !fx) return;
-    if (!RB.configured) { sp.innerHTML = '<p class="text-sm text-gray-400">Live scores are unavailable right now.</p>'; fx.innerHTML = ''; return; }
+    if (!HAS_CFG) { sp.innerHTML = '<p class="text-sm text-gray-400">Live scores are unavailable right now.</p>'; fx.innerHTML = ''; return; }
     const live = st.matches.filter((m) => m.status === 'live');
     const upcoming = st.matches.filter((m) => ['scheduled', 'ready'].includes(m.status));
     const feature = live[0] || upcoming[0] || st.matches.filter((m) => m.status === 'final').slice(-1)[0];
@@ -159,9 +179,9 @@
   }, 1000);
 
   // ----- start -----
-  if (!RB.configured) { setConn('OFFLINE'); renderAll(); return; }
+  if (!HAS_CFG) { setConn('OFFLINE'); renderAll(); return; }
   renderAll();
-  fetchAll().then(() => { subscribe(); });
+  fetchAll().then(() => { try { if (pub) subscribe(); } catch (e) { setConn('RECONNECTING'); } });
   window.addEventListener('online', () => { setConn('SYNCING'); fetchAll(); });
   window.addEventListener('offline', () => setConn('OFFLINE'));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchAll(); });
