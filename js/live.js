@@ -11,6 +11,27 @@
   const when = (t) => new Date(t).toLocaleString('en-KE', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
   const SEL = '*, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)';
 
+  // The public page never touches the signed-in session. It reads with plain REST calls (anon key, 10 s timeout)
+  // and uses its own anon-only client for realtime, so a stuck auth lock can never freeze the scoreboard.
+  const CFG = window.RBT_CONFIG || {};
+  const HAS_CFG = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+  async function rest(path, body) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
+    try {
+      const r = await fetch(CFG.SUPABASE_URL + '/rest/v1/' + path, {
+        method: body ? 'POST' : 'GET', signal: ctl.signal,
+        headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(t); }
+  }
+  let pub = null;
+  try {
+    if (HAS_CFG && window.supabase) pub = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  } catch (e) { pub = null; }
+
   const st = { matches: [], standings: [], news: [], filter: 'all', conn: 'SYNCING', lastSync: null, recv: {}, fetchedOnce: false };
   L.state = st;
 
@@ -28,34 +49,30 @@
 
   // ----- data -----
   async function fetchAll() {
-    if (!RB.sb) return setConn('OFFLINE');
+    if (!HAS_CFG) return setConn('OFFLINE');
     try {
-      const [m, s, n] = await Promise.all([
-        RB.sb.from('matches').select(SEL).order('scheduled_at', { ascending: true }),
-        RB.sb.rpc('get_standings'),
-        RB.sb.from('announcements').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(10)
+      const [m, s2, n] = await Promise.all([
+        rest('matches?select=' + encodeURIComponent(SEL) + '&order=scheduled_at.asc'),
+        rest('rpc/get_standings', {}).catch(() => []),
+        rest('announcements?select=*&status=eq.published&order=published_at.desc&limit=10').catch(() => [])
       ]);
-      if (m.error) throw m.error;
-      st.matches = m.data || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
-      st.standings = s.error ? [] : (s.data || []); st.news = n.error ? [] : (n.data || []);
+      st.matches = m || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
+      st.standings = s2 || []; st.news = n || [];
       st.fetchedOnce = true; st.lastSync = new Date(); st.loadError = null;
       refreshCulture();
-      // REST snapshots are the reliable fallback transport. Keep the public
-      // scoreboard usable even if a browser/network blocks the Realtime channel.
+      // REST is the reliable transport; realtime only makes updates instant.
       if (st.conn !== 'LIVE') setConn('LIVE');
-      const indicator = $('sync-indicator');
-      if (indicator) indicator.title = 'Connected to Supabase. Instant updates use Realtime; automatic score refresh runs every 5 seconds as backup.';
       renderAll();
     } catch (e) {
       st.loadError = e && e.message ? e.message : String(e);
       console.error('[RBT] Live score snapshot failed:', e);
-      if (st.conn === 'LIVE') setConn('RECONNECTING'); else setConn('OFFLINE');
+      setConn(st.conn === 'LIVE' && navigator.onLine ? 'RECONNECTING' : 'OFFLINE');
       renderAll();
     }
   }
 
   function subscribe() {
-    const ch = RB.sb.channel('rbt-public')
+    const ch = pub.channel('rbt-public')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, (p) => {
         st.lastSync = new Date();
         if (p.eventType === 'DELETE') { st.matches = st.matches.filter((x) => x.id !== p.old.id); renderAll(); return; }
@@ -75,10 +92,9 @@
       });
     return ch;
   }
-  async function refreshStandings() { const r = await RB.sb.rpc('get_standings'); if (!r.error) { st.standings = r.data || []; renderStandings(); } }
+  async function refreshStandings() { try { st.standings = (await rest('rpc/get_standings', {})) || []; renderStandings(); } catch (e) {} }
   async function refreshNews() {
-    const r = await RB.sb.from('announcements').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(10);
-    if (!r.error) { st.news = r.data || []; renderNews(); }
+    try { st.news = (await rest('announcements?select=*&status=eq.published&order=published_at.desc&limit=10')) || []; renderNews(); } catch (e) {}
   }
 
   // ----- rendering -----
@@ -93,7 +109,7 @@
 
   function renderTicker() {
     const el = $('ticker-content'); if (!el) return;
-    if (!RB.configured) { el.innerHTML = '<span class="text-gray-400">Live scores are unavailable.</span>'; return; }
+    if (!HAS_CFG) { el.innerHTML = '<span class="text-gray-400">Live scores are unavailable.</span>'; return; }
     const live = st.matches.find((m) => m.status === 'live');
     const next = st.matches.filter((m) => ['scheduled', 'ready'].includes(m.status) && new Date(m.scheduled_at) > Date.now() - 36e5)[0];
     const parts = [];
@@ -116,7 +132,7 @@
 
   function renderMatches() {
     const sp = $('live-spotlight'), fx = $('fixtures-container'); if (!sp || !fx) return;
-    if (!RB.configured) { sp.innerHTML = '<p class="text-sm text-gray-400">Live scores are unavailable right now.</p>'; fx.innerHTML = ''; return; }
+    if (!HAS_CFG) { sp.innerHTML = '<p class="text-sm text-gray-400">Live scores are unavailable right now.</p>'; fx.innerHTML = ''; return; }
     const live = st.matches.filter((m) => m.status === 'live');
     const upcoming = st.matches.filter((m) => ['scheduled', 'ready'].includes(m.status));
     const feature = live[0] || upcoming[0] || st.matches.filter((m) => m.status === 'final').slice(-1)[0];
@@ -158,30 +174,31 @@
     const b = $('hype-banner'); if (b) { const ban = st.news.find((a) => a.is_banner); if (ban) { b.textContent = ban.title + (ban.body ? ' - ' + ban.body : ''); b.classList.remove('hidden'); } else b.classList.add('hidden'); }
   }
 
-  function publicAsset(bucket,path){return path ? RB.sb.storage.from(bucket).getPublicUrl(path).data.publicUrl : '';}
+  function publicAsset(bucket,path){return path ? CFG.SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + String(path).split('/').map(encodeURIComponent).join('/') : '';}
   function renderCulture(roster,cards,products){
     const rosterEl=$('ballers-roster'), cardsEl=$('ballers-cards'), merchEl=$('merch-products');
     if(rosterEl){
       rosterEl.innerHTML=roster.length?roster.map(p=>'<article class="bg-rbtCard border border-rbtBorder rounded-2xl overflow-hidden hover:border-rbtOrange transition">'+
-        (p.photo_path?'<img src="'+esc(publicAsset('player-photos',p.photo_path))+'" alt="'+esc(p.full_name)+'" class="w-full h-64 object-cover object-top">':'<div class="h-64 bg-black/40 flex items-center justify-center text-5xl font-heading font-bold text-rbtOrange">'+esc(String(p.full_name||'?').split(/\\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+
+        (p.photo_path?'<img src="'+esc(publicAsset('player-photos',p.photo_path))+'" alt="'+esc(p.full_name)+'" class="w-full h-64 object-cover object-top">':'<div class="h-64 bg-black/40 flex items-center justify-center text-5xl font-heading font-bold text-rbtOrange">'+esc(String(p.full_name||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+
         '<div class="p-5"><div class="flex items-center justify-between gap-2"><span class="text-rbtGold text-xs font-bold uppercase">'+esc(p.position||'Player')+'</span><span class="text-xs text-gray-400">#'+esc(p.jersey_no??'—')+'</span></div><h4 class="font-heading font-bold text-xl text-white mt-2">'+esc(p.full_name)+'</h4><p class="text-xs text-gray-400">'+esc(p.team?.name||'Rongai Ballers')+'</p>'+(p.bio?'<p class="text-sm text-gray-300 mt-3">'+esc(p.bio)+'</p>':'')+'</div></article>').join(''):'<p class="text-sm text-gray-400">Player profiles will appear here when the roster is published.</p>';
       const search=$('ballers-search'); if(search&&!search.dataset.bound){search.dataset.bound='1';search.addEventListener('input',()=>{const term=search.value.toLowerCase();rosterEl.querySelectorAll('article').forEach((el)=>el.classList.toggle('hidden',!el.textContent.toLowerCase().includes(term)));});}
     }
     if(cardsEl){
-      cardsEl.innerHTML=cards.length?cards.map(c=>{const p=c.player||{},stats=c.stats||{},photo=p.photo_path?publicAsset('player-photos',p.photo_path):'';return '<article class="relative overflow-hidden rounded-2xl border border-rbtGold/50 bg-gradient-to-br from-rbtCard via-black to-rbtCard p-4 min-h-64 shadow-xl"><div class="absolute inset-0 opacity-10 pointer-events-none" style="background:linear-gradient(135deg,#ff6a00,transparent 50%,#f7bd43)"></div><div class="relative flex justify-between text-[10px] uppercase tracking-widest font-bold text-rbtGold"><span>'+esc(c.collection_name)+'</span><span>'+esc(c.edition)+'</span></div>'+(photo?'<img src="'+esc(photo)+'" alt="" class="relative w-full h-36 object-cover object-top rounded-xl mt-3">':'<div class="relative h-36 flex items-center justify-center text-4xl font-heading font-black text-rbtOrange">'+esc(String(p.full_name||'RB').split(/\\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+'<div class="relative mt-3"><h4 class="font-heading font-black text-lg text-white">'+esc(p.full_name||'Rongai Baller')+'</h4><p class="text-[10px] text-gray-400 uppercase">#'+esc(p.jersey_no??'—')+' · '+esc(p.position||'Player')+' · '+esc(c.season)+'</p><div class="flex flex-wrap gap-2 mt-2">'+Object.entries(stats).slice(0,3).map(([k,v])=>'<span class="text-[10px] bg-white/10 rounded px-2 py-1 text-gray-200">'+esc(k)+': '+esc(v)+'</span>').join('')+'</div><p class="text-[10px] text-rbtGold uppercase font-bold mt-3">'+esc(c.rarity)+' edition</p></div></article>'}).join(''):'<p class="text-sm text-gray-400">New trading cards will be revealed here as they are published.</p>';
+      cardsEl.innerHTML=cards.length?cards.map(c=>{const p=c.player||{},stats=c.stats||{},photo=p.photo_path?publicAsset('player-photos',p.photo_path):'';return '<article class="relative overflow-hidden rounded-2xl border border-rbtGold/50 bg-gradient-to-br from-rbtCard via-black to-rbtCard p-4 min-h-64 shadow-xl"><div class="absolute inset-0 opacity-10 pointer-events-none" style="background:linear-gradient(135deg,#ff6a00,transparent 50%,#f7bd43)"></div><div class="relative flex justify-between text-[10px] uppercase tracking-widest font-bold text-rbtGold"><span>'+esc(c.collection_name)+'</span><span>'+esc(c.edition)+'</span></div>'+(photo?'<img src="'+esc(photo)+'" alt="" class="relative w-full h-36 object-cover object-top rounded-xl mt-3">':'<div class="relative h-36 flex items-center justify-center text-4xl font-heading font-black text-rbtOrange">'+esc(String(p.full_name||'RB').split(/\s+/).map(x=>x[0]).slice(0,2).join(''))+'</div>')+'<div class="relative mt-3"><h4 class="font-heading font-black text-lg text-white">'+esc(p.full_name||'Rongai Baller')+'</h4><p class="text-[10px] text-gray-400 uppercase">#'+esc(p.jersey_no??'—')+' · '+esc(p.position||'Player')+' · '+esc(c.season)+'</p><div class="flex flex-wrap gap-2 mt-2">'+Object.entries(stats).slice(0,3).map(([k,v])=>'<span class="text-[10px] bg-white/10 rounded px-2 py-1 text-gray-200">'+esc(k)+': '+esc(v)+'</span>').join('')+'</div><p class="text-[10px] text-rbtGold uppercase font-bold mt-3">'+esc(c.rarity)+' edition</p></div></article>'}).join(''):'<p class="text-sm text-gray-400">New trading cards will be revealed here as they are published.</p>';
     }
     if(merchEl){
-      merchEl.innerHTML=products.length?products.map(p=>{const path=(p.image_paths||[])[0],src=path&&/^https:\\/\\//.test(path)?path:publicAsset('merch-images',path);return '<article class="bg-rbtCard border border-rbtBorder rounded-2xl overflow-hidden hover:border-rbtOrange transition">'+(src?'<img src="'+esc(src)+'" alt="'+esc(p.name)+'" class="w-full h-64 object-cover">':'<div class="h-64 bg-black/40 flex items-center justify-center font-heading font-black text-2xl text-rbtOrange">STREET CULTURE</div>')+'<div class="p-5 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[10px] text-rbtGold uppercase font-bold">'+esc(p.category)+'</span>'+(p.is_featured?'<span class="text-[10px] text-rbtOrange uppercase font-bold">Featured</span>':'')+'</div><h4 class="font-heading font-bold text-lg text-white">'+esc(p.name)+'</h4><p class="text-sm text-gray-400">'+esc(p.description||'')+'</p><div class="flex items-center justify-between pt-2"><b class="text-rbtGold text-lg">'+(Number(p.price_kes)>0?'KES '+Number(p.price_kes).toLocaleString('en-KE'):'Price on request')+'</b><span class="text-xs '+(p.availability==='available'?'text-emerald-400':'text-gray-400')+'">'+esc(String(p.availability||'available').replace('_',' '))+'</span></div>'+(p.sizes?.length?'<p class="text-[10px] text-gray-500">Sizes: '+esc(p.sizes.join(', '))+'</p>':'')+'</div></article>'}).join(''):'<p class="text-sm text-gray-400">Official merchandise will appear here when products are published.</p>';
+      merchEl.innerHTML=products.length?products.map(p=>{const path=(p.image_paths||[])[0],src=path&&/^https:\/\//.test(path)?path:publicAsset('merch-images',path);return '<article class="bg-rbtCard border border-rbtBorder rounded-2xl overflow-hidden hover:border-rbtOrange transition">'+(src?'<img src="'+esc(src)+'" alt="'+esc(p.name)+'" class="w-full h-64 object-cover">':'<div class="h-64 bg-black/40 flex items-center justify-center font-heading font-black text-2xl text-rbtOrange">STREET CULTURE</div>')+'<div class="p-5 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[10px] text-rbtGold uppercase font-bold">'+esc(p.category)+'</span>'+(p.is_featured?'<span class="text-[10px] text-rbtOrange uppercase font-bold">Featured</span>':'')+'</div><h4 class="font-heading font-bold text-lg text-white">'+esc(p.name)+'</h4><p class="text-sm text-gray-400">'+esc(p.description||'')+'</p><div class="flex items-center justify-between pt-2"><b class="text-rbtGold text-lg">'+(Number(p.price_kes)>0?'KES '+Number(p.price_kes).toLocaleString('en-KE'):'Price on request')+'</b><span class="text-xs '+(p.availability==='available'?'text-emerald-400':'text-gray-400')+'">'+esc(String(p.availability||'available').replace('_',' '))+'</span></div>'+(p.sizes?.length?'<p class="text-[10px] text-gray-500">Sizes: '+esc(p.sizes.join(', '))+'</p>':'')+'</div></article>'}).join(''):'<p class="text-sm text-gray-400">Official merchandise will appear here when products are published.</p>';
     }
   }
   async function refreshCulture(){
-    if(!RB.sb)return;
+    if(!HAS_CFG)return;
+    const q=(path)=>rest(path).catch(()=>[]);
     const [pr,cr,mr]=await Promise.all([
-      RB.sb.from('players').select('id,team_id,full_name,jersey_no,position,photo_path,bio,status,team:teams(name)').eq('is_published',true).is('archived_at',null).neq('status','archived').order('full_name'),
-      RB.sb.from('baller_trading_cards').select('*,player:players(id,full_name,jersey_no,position,photo_path)').eq('status','published').order('season',{ascending:false}),
-      RB.sb.from('merch_products').select('*').eq('status','published').order('display_order').order('created_at',{ascending:false})
+      q('players?select='+encodeURIComponent('id,team_id,full_name,jersey_no,position,photo_path,bio,status,team:teams(name)')+'&is_published=eq.true&archived_at=is.null&status=neq.archived&order=full_name'),
+      q('baller_trading_cards?select='+encodeURIComponent('*,player:players(id,full_name,jersey_no,position,photo_path)')+'&status=eq.published&order=season.desc'),
+      q('merch_products?select=*&status=eq.published&order=display_order,created_at.desc')
     ]);
-    renderCulture(pr.error?[]:(pr.data||[]),cr.error?[]:(cr.data||[]),mr.error?[]:(mr.data||[]));
+    renderCulture(pr,cr,mr);
   }
   function renderAll() { renderTicker(); renderMatches(); renderStandings(); renderBracket(); renderStage(); renderNews(); }
   L.setFilter = (f) => { st.filter = f; renderMatches(); };
@@ -194,30 +211,11 @@
   }, 1000);
 
   // ----- start -----
-  if (!RB.configured) { setConn('OFFLINE'); renderAll(); return; }
+  if (!HAS_CFG) { setConn('OFFLINE'); renderAll(); return; }
   renderAll();
-  refreshCulture();
-
-  // Start the WebSocket immediately. Do not make live-score subscriptions wait
-  // for the initial REST snapshot: a slow/hung database read must not leave the
-  // entire public site stuck forever on "SYNCING".
-  try {
-    subscribe();
-  } catch (e) {
-    console.error('[RBT] Could not start realtime subscription:', e);
-    setConn('RECONNECTING');
-  }
-  // Bound the first snapshot so the UI can report a failure instead of waiting forever.
-  const firstSnapshot = fetchAll();
-  Promise.race([
-    firstSnapshot,
-    new Promise((_, reject) => window.setTimeout(() => reject(new Error('Live score request timed out after 12 seconds.')), 12000))
-  ]).catch((e) => {
-    st.loadError = e && e.message ? e.message : String(e);
-    console.error('[RBT] Initial live score load timed out or failed:', e);
-    if (st.conn !== 'LIVE') setConn('OFFLINE');
-    renderAll();
-  });
+  // Start realtime and the first snapshot independently; neither waits for the other.
+  try { if (pub) subscribe(); } catch (e) { console.error('[RBT] Realtime start failed:', e); setConn('RECONNECTING'); }
+  fetchAll();
   window.addEventListener('online', () => { setConn('SYNCING'); fetchAll(); });
   window.addEventListener('offline', () => setConn('OFFLINE'));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchAll(); });
