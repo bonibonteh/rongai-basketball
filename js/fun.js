@@ -19,7 +19,7 @@
     const fit = () => { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); };
     fit(); addEventListener('resize', fit);
     const n = W < 640 ? 3 : 5;
-    const balls = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H * .6, r: 16 + Math.random() * 20, vx: (Math.random() < .5 ? -1 : 1) * (.4 + Math.random() * .8), vy: 0, a: Math.random() * 6, spin: (Math.random() - .5) * .05 }));
+    const balls = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H * .6, r: 20 + Math.random() * 22, vx: (Math.random() < .5 ? -1 : 1) * (.4 + Math.random() * .8), vy: 0, a: Math.random() * 6, spin: (Math.random() - .5) * .05 }));
     function draw(b) {
       cx.save(); cx.translate(b.x, b.y); cx.rotate(b.a);
       cx.beginPath(); cx.arc(0, 0, b.r, 0, 7); cx.fillStyle = '#e25a0d'; cx.fill(); cx.lineWidth = 1.5; cx.strokeStyle = '#2a1206'; cx.stroke();

@@ -1,5 +1,5 @@
 /* Playful layer. Decorative only: nothing here captures clicks or moves page content. */
-#fx-balls { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .5; }
+#fx-balls { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .85; }
 #app { position: relative; z-index: 1; }
 @keyframes fxIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .public-tab-content:not(.hidden) > * { animation: fxIn .4s ease both; }
