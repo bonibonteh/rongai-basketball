@@ -200,7 +200,7 @@
     ]);
     renderCulture(pr,cr,mr);
   }
-  function renderAll() { renderTicker(); renderMatches(); renderStandings(); renderBracket(); renderStage(); renderNews(); }
+  function renderAll() { renderTicker(); renderMatches(); renderStandings(); renderBracket(); renderStage(); renderNews(); try { if (L.onRender) L.onRender(st); } catch (e) { console.error(e); } }
   L.setFilter = (f) => { st.filter = f; renderMatches(); };
 
   // Clocks tick locally between confirmed updates.

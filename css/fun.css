@@ -1,0 +1,34 @@
+/* Playful layer. Decorative only: nothing here captures clicks or moves page content. */
+#fx-balls { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .5; }
+#app { position: relative; z-index: 1; }
+@keyframes fxIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.public-tab-content:not(.hidden) > * { animation: fxIn .4s ease both; }
+.public-tab-content:not(.hidden) > *:nth-child(2) { animation-delay: .05s; }
+.public-tab-content:not(.hidden) > *:nth-child(3) { animation-delay: .1s; }
+.public-tab-content:not(.hidden) > *:nth-child(4) { animation-delay: .15s; }
+.public-tab-content:not(.hidden) > *:nth-child(n+5) { animation-delay: .2s; }
+
+/* Dribbling ball with a shadow that reacts to the bounce */
+.fx-dribble { position: relative; width: 84px; height: 110px; cursor: pointer; background: none; border: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+.fx-dribble .ball { position: absolute; left: 50%; top: 0; width: 64px; height: 64px; margin-left: -32px; animation: fxBounce .9s cubic-bezier(.3,.0,.5,1) infinite; transform-origin: 50% 100%; }
+.fx-dribble .shadow { position: absolute; left: 50%; bottom: 6px; width: 54px; height: 10px; margin-left: -27px; border-radius: 50%; background: rgba(0,0,0,.55); filter: blur(2px); animation: fxShadow .9s cubic-bezier(.3,0,.5,1) infinite; }
+.fx-dribble.fast .ball, .fx-dribble.fast .shadow { animation-duration: .45s; }
+@keyframes fxBounce { 0%,100% { transform: translateY(0) scale(1,1); } 48% { transform: translateY(32px) scale(1,1); } 50% { transform: translateY(36px) scale(1.15,.82); } 52% { transform: translateY(32px) scale(1,1); } }
+@keyframes fxShadow { 0%,100% { transform: scale(.55); opacity: .35; } 50% { transform: scale(1); opacity: .7; } }
+
+/* Score pop and toast */
+@keyframes fxPop { 0% { transform: scale(1); } 30% { transform: scale(1.35); color: #ffb700; } 100% { transform: scale(1); } }
+.fx-pop { animation: fxPop .7s ease; display: inline-block; }
+.fx-card { transition: transform .15s ease, border-color .2s ease, box-shadow .2s ease; will-change: transform; }
+.fx-card:hover { box-shadow: 0 10px 30px rgba(255,85,0,.12); }
+.fx-chip { transition: background .15s, color .15s, transform .1s; }
+.fx-chip:active { transform: scale(.95); }
+.fx-form { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+
+/* Hoop shot game */
+#fx-hoop { touch-action: manipulation; width: 100%; max-width: 360px; border-radius: 14px; background: linear-gradient(#10151d,#0c0e12); border: 1px solid #2d3342; display: block; margin: 0 auto; cursor: crosshair; }
+
+/* Modal */
+#fx-modal { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.7); }
+#fx-modal.open { display: flex; animation: fxIn .2s ease; }
+@media (prefers-reduced-motion: reduce) { #fx-balls { display: none; } .fx-dribble .ball, .fx-dribble .shadow { animation: none !important; } }
