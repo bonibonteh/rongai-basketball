@@ -20,10 +20,12 @@
       w.innerHTML = `<form class="bg-rbtCard border border-rbtBorder rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 space-y-3" role="dialog" aria-modal="true" aria-label="${t.id ? 'Edit team' : 'Add team'}">
         <h3 class="font-heading font-bold text-lg text-white">${t.id ? 'Edit ' + esc(t.name) : 'Add a team'}</h3>
         <div><label class="${L}" for="tf-n">Team name</label><input id="tf-n" required minlength="2" maxlength="80" value="${esc(t.name || '')}" class="${I}"></div>
+        <div><label class="${L}" for="tf-s">Abbreviation (for example RHF)</label><input id="tf-s" maxlength="12" value="${esc(t.short_name || '')}" class="${I}"></div>
         <div><label class="${L}" for="tf-p">Pool</label><input id="tf-p" maxlength="20" value="${esc(t.pool || '')}" class="${I}"></div>
         <div><label class="${L}" for="tf-d">Description</label><textarea id="tf-d" rows="3" maxlength="1000" class="${I}">${esc(t.description || '')}</textarea></div>
         <div class="grid grid-cols-2 gap-3"><div><label class="${L}" for="tf-c">Coach</label><input id="tf-c" maxlength="120" value="${esc(t.coach_name || '')}" class="${I}"></div><div><label class="${L}" for="tf-m">Manager</label><input id="tf-m" maxlength="120" value="${esc(t.manager_name || '')}" class="${I}"></div></div>
         <div><label class="${L}" for="tf-l">Team logo (JPG, PNG or WebP, up to 2 MB)</label><input id="tf-l" type="file" accept="image/jpeg,image/png,image/webp" class="${I}"><img id="tf-pv" alt="Logo preview" class="hidden mt-2 w-16 h-16 rounded-full object-cover border border-rbtBorder"></div>
+        <div><label class="${L}" for="tf-ph">Team photograph (JPG, PNG or WebP, up to 2 MB)</label><input id="tf-ph" type="file" accept="image/jpeg,image/png,image/webp" class="${I}">${t.photo_path ? '<p class="text-[11px] text-gray-400 mt-1">A photograph is already saved. Choose a file to replace it.</p>' : ''}</div>
         <p id="tf-e" class="hidden text-xs text-red-300" role="alert"></p>
         <div class="flex gap-2 justify-end"><button type="button" id="tf-x" class="px-4 py-2 rounded-lg border border-rbtBorder text-gray-300 text-xs font-heading font-bold uppercase">Cancel</button><button class="px-4 py-2 rounded-lg bg-rbtOrange text-black text-xs font-heading font-bold uppercase">${t.id ? 'Save team' : 'Add team'}</button></div></form>`;
       document.body.appendChild(w);
@@ -35,17 +37,27 @@
         const f = $('#tf-l', w).files[0];
         if (f && !TYPES[f.type]) return err('The logo must be a JPG, PNG or WebP image.');
         if (f && f.size > 2097152) return err('The logo is larger than 2 MB. Choose a smaller image.');
+        const ph = $('#tf-ph', w).files[0];
+        if (ph && !TYPES[ph.type]) return err('The photograph must be a JPG, PNG or WebP image.');
+        if (ph && ph.size > 2097152) return err('The photograph is larger than 2 MB. Choose a smaller image.');
         w.remove();
-        resolve({ file: f || null, v: { name: $('#tf-n', w).value.trim(), pool: $('#tf-p', w).value.trim() || null, description: $('#tf-d', w).value.trim() || null, coach_name: $('#tf-c', w).value.trim() || null, manager_name: $('#tf-m', w).value.trim() || null } });
+        resolve({ file: f || null, photo: ph || null, v: { name: $('#tf-n', w).value.trim(), short_name: $('#tf-s', w).value.trim() || null, pool: $('#tf-p', w).value.trim() || null, description: $('#tf-d', w).value.trim() || null, coach_name: $('#tf-c', w).value.trim() || null, manager_name: $('#tf-m', w).value.trim() || null } });
       };
       $('#tf-n', w).focus();
     });
   }
-  async function upload(teamId, file) {
-    const path = teamId + '/' + Date.now() + '.' + TYPES[file.type];
+  async function upload(teamId, file, kind) {
+    const path = teamId + '/' + (kind || 'logo') + '-' + Date.now() + '.' + TYPES[file.type];
     const { error } = await sb.storage.from('team-logos').upload(path, file, { contentType: file.type, upsert: true });
-    if (error) throw error;
+    if (error) throw new Error('The image could not be uploaded: ' + (error.message || 'permission denied') + '. Only an administrator can change team images.');
     return path;
+  }
+  const dropOld = (p) => { if (p) sb.storage.from('team-logos').remove([p]).catch(() => {}); };
+  // A save that changes no rows means the database refused it (for example the account lacks permission). Say so.
+  async function saveTeam(id, patch) {
+    const { data, error } = await sb.from('teams').update(patch).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('The team was not saved. Your account is not allowed to edit team profiles. Sign in as the Tournament Administrator.');
   }
 
   async function profile(main, id) {
@@ -59,6 +71,7 @@
     main.innerHTML = `<div class="max-w-4xl mx-auto space-y-4">
       <button id="tp-back" class="text-xs text-gray-300 hover:text-rbtOrange">&larr; All teams</button>
       ${card('', `<div class="flex flex-wrap items-center gap-4">${logoImg(t, 'w-20 h-20')}<div class="min-w-0 flex-1"><h2 class="font-heading font-extrabold text-2xl text-white">${esc(t.name)}</h2><p class="text-xs text-gray-400">${t.pool ? 'Pool ' + esc(t.pool) + ' · ' : ''}${chip(t.registration_status)} ${t.is_active ? '' : chip('inactive')}</p><p class="text-sm text-gray-300 mt-2 break-words">${esc(t.description || 'No description yet.')}</p><p class="text-xs text-gray-400 mt-2">Coach: ${esc(t.coach_name || '-')} · Manager: ${esc(t.manager_name || '-')} · Captain: ${esc(t.captain_name || '-')}</p></div>${btn('Edit team', 'id="tp-edit"', 'primary')}</div>`)}
+      ${t.photo_path ? `<img src="${esc(url(t.photo_path))}" alt="${esc(t.name)} team photograph" class="w-full max-h-72 object-cover rounded-xl border border-rbtBorder">` : ''}
       ${card('Standing', s ? `<p class="text-sm text-gray-200">Position <b class="text-white">${s.rank}</b> · played ${s.played} · won ${s.wins} · lost ${s.losses} · drawn ${s.draws} · for ${s.points_for} · against ${s.points_against} · difference ${s.diff} · table points <b class="text-rbtOrange">${s.points}</b>${s.is_override ? ' <span class="text-[10px] text-amber-300 uppercase">manual override</span>' : ''}</p>` : empty('This team is not on the standings table yet. It must be approved.'))}
       ${card('Previous results', played.length ? `<ul class="divide-y divide-rbtBorder/50">${played.map(row).join('')}</ul>` : empty('No final results for this team yet.'))}
       ${card('Upcoming and other games', upcoming.length ? `<ul class="divide-y divide-rbtBorder/50">${upcoming.map(row).join('')}</ul>` : empty('No upcoming games.'))}</div>`;
@@ -68,8 +81,11 @@
   async function edit(t) {
     const r = await form(t); if (!r) return false;
     const patch = { ...r.v };
-    if (r.file) patch.logo_path = await upload(t.id, r.file);
-    const { error } = await sb.from('teams').update(patch).eq('id', t.id); if (error) throw error;
+    if (r.file) patch.logo_path = await upload(t.id, r.file, 'logo');
+    if (r.photo) patch.photo_path = await upload(t.id, r.photo, 'photo');
+    await saveTeam(t.id, patch);
+    if (r.file) dropOld(t.logo_path);
+    if (r.photo) dropOld(t.photo_path);
     toast('Team saved. The public site updates automatically.'); return true;
   }
 
@@ -85,7 +101,10 @@
     $('#tm-add', main).onclick = guard(async () => {
       const r = await form(); if (!r) return;
       const { data, error } = await sb.from('teams').insert({ ...r.v, registration_status: 'approved', is_published: true, is_active: true }).select('id').single(); if (error) throw error;
-      if (r.file) { const { error: e2 } = await sb.from('teams').update({ logo_path: await upload(data.id, r.file) }).eq('id', data.id); if (e2) throw e2; }
+      const media = {};
+      if (r.file) media.logo_path = await upload(data.id, r.file, 'logo');
+      if (r.photo) media.photo_path = await upload(data.id, r.photo, 'photo');
+      if (Object.keys(media).length) await saveTeam(data.id, media);
       toast('Team added.'); again();
     });
     $$('[data-pf]', main).forEach((b) => b.onclick = () => { T.open = b.dataset.pf; list(main).then(icons); });

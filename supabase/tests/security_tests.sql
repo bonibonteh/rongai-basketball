@@ -165,3 +165,10 @@ call t.check('other official cannot see the task', t.val(:FX, 'select count(*)::
 call t.check('official saves own dashboard layout', t.run(:SK, $$insert into public.user_dashboard_preferences(user_id,layout) values (auth.uid(),'{"widgets":["tasks"]}')$$), 'OK');
 call t.check('official cannot save layout for someone else', t.run(:SK, $$insert into public.user_dashboard_preferences(user_id) values ('00000000-0000-0000-0000-00000000d001')$$), 'row-level security');
 call t.check('last active director cannot be removed', t.run(:D, $$select public.admin_set_official('00000000-0000-0000-0000-00000000d001', null, null, 'revoked')$$), 'cannot change your own');
+
+-- 10. Team media: the Director can upload and replace a team logo
+call t.check('director uploads a team logo', t.run(:D, $$insert into storage.objects(bucket_id,name) values ('team-logos','t/logo.png')$$), 'OK');
+call t.check('director replaces a team logo', t.val(:D, $$with u as (update storage.objects set name='t/logo2.png' where bucket_id='team-logos' and name='t/logo.png' returning 1) select count(*)::text from u$$), '1');
+call t.check('director edits a team profile and photo', t.val(:D, $$with u as (update public.teams set description='Fast break', coach_name='Coach', photo_path='t/p.png', short_name='RH' where name='Rongai Heat' returning 1) select count(*)::text from u$$), '1');
+call t.check('visitor cannot upload a team logo', t.run(null, $$insert into storage.objects(bucket_id,name) values ('team-logos','t/evil.png')$$, true), 'permission denied');
+call t.check('scorekeeper cannot upload a team logo', t.run(:SK, $$insert into storage.objects(bucket_id,name) values ('team-logos','t/evil.png')$$), 'row-level security');
