@@ -9,7 +9,7 @@
   const fmtClock = (s) => { s = Math.max(0, Math.floor(s || 0)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
   const period = (p) => (p <= 4 ? 'Q' + p : 'OT' + (p - 4));
   const when = (t) => new Date(t).toLocaleString('en-KE', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
-  const SEL = '*, home:teams!matches_home_team_id_fkey(name), away:teams!matches_away_team_id_fkey(name)';
+  const SEL = window.RBL ? window.RBL.MATCH_SEL : '*, home:teams!matches_home_team_id_fkey(id,name), away:teams!matches_away_team_id_fkey(id,name)';
 
   // The public page never touches the signed-in session. It reads with plain REST calls (anon key, 10 s timeout)
   // and uses its own anon-only client for realtime, so a stuck auth lock can never freeze the scoreboard.
@@ -56,7 +56,7 @@
         rest('rpc/get_standings', {}).catch(() => []),
         rest('announcements?select=*&status=eq.published&order=published_at.desc&limit=10').catch(() => [])
       ]);
-      st.matches = m || []; st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
+      st.matches = (m || []).map((x) => { x.home = x.home || { name: 'To be confirmed' }; x.away = x.away || { name: 'To be confirmed' }; return x; }); st.matches.forEach((x) => (st.recv[x.id] = Date.now()));
       st.standings = s2 || []; st.news = n || [];
       st.fetchedOnce = true; st.lastSync = new Date(); st.loadError = null;
       refreshCulture();
@@ -120,13 +120,24 @@
     el.innerHTML = parts.join('<span class="text-rbtBorder">•</span>') || (st.fetchedOnce ? '<span class="text-gray-400">No published games yet. Live score connection will keep retrying.</span>' : st.conn === 'OFFLINE' ? '<span class="text-red-300">Could not load live scores. Check the database connection and reload.</span>' : '<span class="text-gray-400">Connecting to live scores…</span>');
   }
 
+  // clickable team identity (logo + name) that opens the profile preview
+  function tbtn(t, size) {
+    const R = window.RBL; if (!R || !t) return '<span>' + esc(t ? t.name : '') + '</span>';
+    return '<button type="button" class="mc-team" data-team="' + esc(t.id || '') + '" aria-label="View ' + esc(t.name) + ' profile">' + R.badge(t, size || 56) + '<span>' + esc(t.name) + '</span></button>';
+  }
+  function cardMid(m) {
+    const done = ['final', 'live', 'under_review'].includes(m.status);
+    if (done) return m.home_score + ' - ' + m.away_score + '<small>' + (m.status === 'live' ? period(m.period) + ' ' + fmtClock(clockNow(m)) : m.status === 'final' ? 'FINAL' : 'REVIEW') + '</small>';
+    return 'VS<small data-cd="' + esc(m.scheduled_at) + '">' + (['scheduled', 'ready'].includes(m.status) && window.RBL ? esc(window.RBL.countdown(m.scheduled_at)) : esc(m.status)) + '</small>';
+  }
   function spotlight(m) {
     return '<div class="bg-gradient-to-br from-rbtCard to-[#1a212d] border-2 ' + (m.status === 'live' ? 'border-rbtOrange/60' : 'border-rbtBorder') + ' rounded-2xl p-6 shadow-2xl relative overflow-hidden">'
       + '<div class="flex items-center justify-end gap-2 mb-2">' + (m.status === 'live' ? '<span class="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider animate-pulse"><span class="w-2 h-2 rounded-full bg-white"></span> LIVE NOW</span>' : badge(m)) + '<span class="bg-black/60 border border-rbtBorder text-xs text-gray-300 px-2.5 py-1 rounded font-mono">' + esc(m.court) + '</span></div>'
       + '<div class="text-center mb-4"><span class="text-xs uppercase tracking-widest text-rbtOrange font-heading font-bold">' + esc(m.round) + '</span><h4 class="font-heading font-bold text-lg text-white">' + esc(m.home.name) + ' vs ' + esc(m.away.name) + '</h4></div>'
-      + '<div class="grid grid-cols-3 items-center text-center my-4 gap-2"><div><span class="text-sm font-heading font-bold text-gray-300 uppercase block">' + esc(m.home.name) + '</span><div class="font-heading font-black text-5xl md:text-7xl text-white">' + m.home_score + '</div><span class="text-xs text-gray-400">Fouls: ' + m.home_fouls + ' | Timeouts: ' + m.home_timeouts + '</span></div>'
+      + '<div class="grid grid-cols-3 items-center text-center my-4 gap-2"><div>' + tbtn(m.home, 72) + '<div class="font-heading font-black text-5xl md:text-7xl text-white">' + m.home_score + '</div><span class="text-xs text-gray-400">Fouls: ' + m.home_fouls + ' | Timeouts: ' + m.home_timeouts + '</span></div>'
       + '<div class="flex flex-col items-center justify-center"><span class="text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">' + period(m.period) + '</span><div class="bg-black/50 border border-rbtBorder px-3 py-1 rounded text-rbtGold font-mono font-bold text-sm mb-2" id="spot-clock">' + fmtClock(clockNow(m)) + '</div><span class="text-[10px] uppercase text-gray-400">Shot Clock</span><div class="text-rbtOrange font-mono font-black text-xl" id="spot-shot">' + shotNow(m) + 's</div></div>'
-      + '<div><span class="text-sm font-heading font-bold text-gray-300 uppercase block">' + esc(m.away.name) + '</span><div class="font-heading font-black text-5xl md:text-7xl text-gray-400">' + m.away_score + '</div><span class="text-xs text-gray-400">Fouls: ' + m.away_fouls + ' | Timeouts: ' + m.away_timeouts + '</span></div></div>'
+      + '<div>' + tbtn(m.away, 72) + '<div class="font-heading font-black text-5xl md:text-7xl text-gray-400">' + m.away_score + '</div><span class="text-xs text-gray-400">Fouls: ' + m.away_fouls + ' | Timeouts: ' + m.away_timeouts + '</span></div></div>'
+      + '<p class="text-center mt-2"><a class="mc-open" href="match.html?id=' + encodeURIComponent(m.id) + '">Match details &amp; lineups &rarr;</a></p>'
       + (m.status === 'under_review' ? '<p class="text-xs text-purple-300 text-center">This result is being reviewed by the officials.</p>' : '') + staleNote() + '</div>';
   }
 
@@ -141,9 +152,9 @@
     let list = st.matches.filter((m) => (f === 'all' ? true : f === 'live' ? m.status === 'live' : f === 'upcoming' ? ['scheduled', 'ready', 'postponed'].includes(m.status) : m.status === 'final'));
     list = list.filter((m) => !feature || m.id !== feature.id || f !== 'all');
     list.sort((a, b) => (b.status === 'live') - (a.status === 'live') || new Date(a.scheduled_at) - new Date(b.scheduled_at));
-    fx.innerHTML = list.length ? list.map((m) => '<div class="bg-rbtCard border border-rbtBorder p-4 rounded-xl flex items-center justify-between gap-3"><div class="min-w-0">' + badge(m)
-      + '<h4 class="font-heading font-bold text-white mt-1">' + esc(m.home.name) + (['final', 'live', 'under_review'].includes(m.status) ? ' ' + m.home_score + ' - ' + m.away_score + ' ' : ' vs ') + esc(m.away.name) + '</h4>'
-      + '<p class="text-xs text-gray-400 mt-0.5">' + esc(m.court) + ' • ' + esc(when(m.scheduled_at)) + (m.status_reason && ['postponed', 'cancelled'].includes(m.status) ? ' • ' + esc(m.status_reason) : '') + '</p></div></div>').join('')
+    fx.innerHTML = list.length ? list.map((m) => '<div class="mc-card ' + (m.status === 'live' ? 'is-live' : '') + '"><div class="flex justify-between items-center">' + badge(m) + '<span class="text-xs text-gray-400">' + esc(when(m.scheduled_at)) + '</span></div>'
+      + '<div class="mc-row">' + tbtn(m.home) + '<div class="mc-mid">' + cardMid(m) + '</div>' + tbtn(m.away) + '</div>'
+      + '<div class="mc-foot"><span>&#128205; ' + esc(m.court) + (m.status_reason && ['postponed', 'cancelled'].includes(m.status) ? ' &bull; ' + esc(m.status_reason) : '') + '</span><a class="mc-open" href="match.html?id=' + encodeURIComponent(m.id) + '">Details</a></div></div>').join('')
       : (st.fetchedOnce ? '<p class="text-sm text-gray-400">No games match this filter.</p>' : '');
   }
 
