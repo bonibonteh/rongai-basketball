@@ -196,3 +196,73 @@ call t.check('cannot reverse twice', t.run(:D, $$select public.reverse_standings
 call t.check('director corrects an adjustment', t.run(:D, $$select public.correct_standings_adjustment((select id from public.standings_adjustments where points=-1 and reversed_at is null limit 1), -3, 'Penalty increased after review')$$), 'OK');
 call t.check('corrected value counts', t.val(:D, $$select (adjustment = -3)::text from public.get_standings_admin() where team_id='10000000-0000-0000-0000-000000000003'$$), 'true');
 call t.check('adjustments are audited', t.val(:D, $$select (count(*) >= 5)::text from public.audit_logs where action like 'standings.adjustment%'$$), 'true');
+
+-- 12. Starting Five lineups
+insert into public.players(id,team_id,full_name,jersey_no,position,is_published) values
+ ('30000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','Heat One',1,'PG',true),
+ ('30000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001','Heat Two',2,'SG',true),
+ ('30000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001','Heat Three',3,'SF',true),
+ ('30000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-000000000001','Heat Four',4,'PF',true),
+ ('30000000-0000-0000-0000-000000000005','10000000-0000-0000-0000-000000000001','Heat Five',5,'C',true),
+ ('30000000-0000-0000-0000-000000000006','10000000-0000-0000-0000-000000000001','Heat Six',6,'PG',true),
+ ('30000000-0000-0000-0000-000000000007','10000000-0000-0000-0000-000000000001','Heat Seven',7,'SG',true),
+ ('30000000-0000-0000-0000-000000000008','10000000-0000-0000-0000-000000000001','Heat Eight',8,'C',true),
+ ('30000000-0000-0000-0000-000000000011','10000000-0000-0000-0000-000000000003','Titan One',1,'PG',true),
+ ('30000000-0000-0000-0000-000000000012','10000000-0000-0000-0000-000000000003','Titan Two',2,'SG',true),
+ ('30000000-0000-0000-0000-000000000013','10000000-0000-0000-0000-000000000003','Titan Three',3,'SF',true),
+ ('30000000-0000-0000-0000-000000000014','10000000-0000-0000-0000-000000000003','Titan Four',4,'PF',true),
+ ('30000000-0000-0000-0000-000000000015','10000000-0000-0000-0000-000000000003','Titan Five',5,'C',true),
+ ('30000000-0000-0000-0000-000000000016','10000000-0000-0000-0000-000000000003','Titan Six',6,'PG',true);
+insert into public.matches(id,home_team_id,away_team_id,scheduled_at,is_published,status) values
+ ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003',now() + interval '1 day',true,'scheduled'),
+ ('20000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003',now() + interval '2 day',true,'scheduled');
+insert into public.official_assignments(match_id,user_id,assignment_role) values
+ ('20000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000a001','scorekeeper');
+\set HEAT '''10000000-0000-0000-0000-000000000001'''
+\set TIT '''10000000-0000-0000-0000-000000000003'''
+\set M2 '''20000000-0000-0000-0000-000000000002'''
+\set M3 '''20000000-0000-0000-0000-000000000003'''
+\set S1 '[{"player_id":"30000000-0000-0000-0000-000000000001","position":"PG"},{"player_id":"30000000-0000-0000-0000-000000000002","position":"SG"},{"player_id":"30000000-0000-0000-0000-000000000003","position":"SF"},{"player_id":"30000000-0000-0000-0000-000000000004","position":"PF"},{"player_id":"30000000-0000-0000-0000-000000000005","position":"C"}]'
+\set S2 '[{"player_id":"30000000-0000-0000-0000-000000000006","position":"PG"},{"player_id":"30000000-0000-0000-0000-000000000002","position":"SG"},{"player_id":"30000000-0000-0000-0000-000000000003","position":"SF"},{"player_id":"30000000-0000-0000-0000-000000000007","position":"PF"},{"player_id":"30000000-0000-0000-0000-000000000008","position":"C"}]'
+\set SUBS '[{"player_id":"30000000-0000-0000-0000-000000000006"},{"player_id":"30000000-0000-0000-0000-000000000007"}]'
+\set SUBS2 '[{"player_id":"30000000-0000-0000-0000-000000000001"},{"player_id":"30000000-0000-0000-0000-000000000004"}]'
+\set TST '[{"player_id":"30000000-0000-0000-0000-000000000011","position":"PG"},{"player_id":"30000000-0000-0000-0000-000000000012","position":"SG"},{"player_id":"30000000-0000-0000-0000-000000000013","position":"SF"},{"player_id":"30000000-0000-0000-0000-000000000014","position":"PF"},{"player_id":"30000000-0000-0000-0000-000000000015","position":"C"}]'
+call t.check('director saves and publishes a default lineup', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, %L::jsonb, '30000000-0000-0000-0000-000000000001', true)$f$, :HEAT, :'S1', :'SUBS')), 'OK');
+call t.check('exactly five starters are required', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, '[{"player_id":"30000000-0000-0000-0000-000000000001","position":"PG"}]'::jsonb, '[]'::jsonb, null, true)$f$, :HEAT)), 'exactly five');
+call t.check('the same player cannot be picked twice', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, replace(:'S1','000000000005','000000000001'))), 'twice');
+call t.check('a substitute cannot also start', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[{"player_id":"30000000-0000-0000-0000-000000000001"}]'::jsonb, null, true)$f$, :HEAT, :'S1')), 'twice');
+call t.check('players must belong to the team', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, :'TST')), 'registered players of this team');
+call t.check('captain must be a selected player', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, '30000000-0000-0000-0000-000000000008', true)$f$, :HEAT, :'S1')), 'captain');
+call t.check('every starter needs a valid position', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, replace(:'S1','"C"','"XX"'))), 'position');
+call t.check('official cannot set a lineup', t.run(:SK, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, :'S1')), 'Only the Tournament Administrator');
+call t.check('visitor cannot set a lineup', t.run(null, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, :'S1'), true), 'permission denied');
+call t.check('public sees the published default lineup', t.val(null, $$select count(*)::text from public.lineup_players where role='starter'$$, true), '5');
+call t.check('public sees the substitutes separately', t.val(null, $$select count(*)::text from public.lineup_players where role='substitute'$$, true), '2');
+call t.check('public sees the captain', t.val(null, $$select (captain_player_id = '30000000-0000-0000-0000-000000000001')::text from public.lineups where match_id is null$$, true), 'true');
+call t.check('director saves a DRAFT match lineup', t.run(:D, format($f$select public.save_lineup(%L::uuid, %L::uuid, %L::jsonb, %L::jsonb, null, false)$f$, :HEAT, :M2, :'S2', :'SUBS2')), 'OK');
+call t.check('draft lineups are not public', t.val(null, $$select count(*)::text from public.lineups where match_id is not null$$, true), '0');
+call t.check('assigned official cannot see a draft lineup', t.val(:SK, $$select count(*)::text from public.lineups where match_id is not null$$), '0');
+call t.check('director publishes the match lineup', t.run(:D, format($f$select public.save_lineup(%L::uuid, %L::uuid, %L::jsonb, %L::jsonb, null, true)$f$, :HEAT, :M2, :'S2', :'SUBS2')), 'OK');
+call t.check('different matches have different fives', t.val(:D, $$select (count(distinct l.id) = 2)::text from public.lineups l join public.lineup_players p on p.lineup_id=l.id and p.role='starter' where l.team_id='10000000-0000-0000-0000-000000000001' and p.player_name in ('Heat Five','Heat Eight')$$), 'true');
+call t.check('assigned official sees the published match lineup', t.val(:SK, $$select count(*)::text from public.lineups where match_id='20000000-0000-0000-0000-000000000002'$$), '1');
+call t.check('unassigned official does not see it', t.val(:SK2, $$select count(*)::text from public.lineups where match_id='20000000-0000-0000-0000-000000000002' and status='published' and false$$), '0');
+call t.check('director copies the default into another match', t.run(:D, format($f$select public.copy_default_lineup(%L::uuid, %L::uuid, true)$f$, :HEAT, :M3)), 'OK');
+call t.check('copy is independent of the default', t.run(:D, format($f$select public.save_lineup(%L::uuid, %L::uuid, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, :M3, :'S2')), 'OK');
+call t.check('default lineup is unchanged by match edits', t.val(:D, $$select string_agg(player_name, ',' order by slot) from public.lineup_players where lineup_id=(select id from public.lineups where match_id is null and team_id='10000000-0000-0000-0000-000000000001') and role='starter'$$), 'Heat One,Heat Two,Heat Three,Heat Four,Heat Five');
+call t.check('team not in the match is refused', t.run(:D, format($f$select public.save_lineup('10000000-0000-0000-0000-000000000002'::uuid, %L::uuid, %L::jsonb, '[]'::jsonb, null, true)$f$, :M2, :'S1')), 'not playing');
+-- Titans have no lineup of their own: the default is snapshotted at tip-off only if one is published
+call t.check('director publishes Titans default', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :TIT, :'TST')), 'OK');
+update public.matches set status='ready' where id='20000000-0000-0000-0000-000000000002';
+update public.matches set status='live' where id='20000000-0000-0000-0000-000000000002';
+call t.check('tip-off locks the Heat lineup', t.val(:D, $$select (locked_at is not null)::text from public.lineups where match_id='20000000-0000-0000-0000-000000000002' and team_id='10000000-0000-0000-0000-000000000001'$$), 'true');
+call t.check('tip-off snapshots the Titans default for the record', t.val(:D, $$select source from public.lineups where match_id='20000000-0000-0000-0000-000000000002' and team_id='10000000-0000-0000-0000-000000000003'$$), 'default_snapshot');
+call t.check('snapshot keeps all five starters', t.val(:D, $$select count(*)::text from public.lineup_players p join public.lineups l on l.id=p.lineup_id where l.match_id='20000000-0000-0000-0000-000000000002' and l.team_id='10000000-0000-0000-0000-000000000003' and p.role='starter'$$), '5');
+call t.check('later default change does not alter the historical lineup', t.run(:D, format($f$select public.save_lineup(%L::uuid, null, %L::jsonb, '[]'::jsonb, null, true)$f$, :TIT, replace(:'TST','000000000015','000000000016'))), 'OK');
+call t.check('historical lineup still shows the original five', t.val(:D, $$select count(*)::text from public.lineup_players p join public.lineups l on l.id=p.lineup_id where l.match_id='20000000-0000-0000-0000-000000000002' and l.team_id='10000000-0000-0000-0000-000000000003' and p.player_name='Titan Five'$$), '1');
+call t.check('correction after tip-off needs a reason', t.run(:D, format($f$select public.save_lineup(%L::uuid, %L::uuid, %L::jsonb, '[]'::jsonb, null, true)$f$, :HEAT, :M2, :'S1')), 'reason');
+call t.check('director records a correction with a reason', t.run(:D, format($f$select public.save_lineup(%L::uuid, %L::uuid, %L::jsonb, '[]'::jsonb, null, true, 'Wrong player listed at tip-off')$f$, :HEAT, :M2, :'S1')), 'OK');
+call t.check('correction keeps the original as a revision', t.val(:D, $$select count(*)::text from public.lineup_revisions r join public.lineups l on l.id=r.lineup_id where l.match_id='20000000-0000-0000-0000-000000000002' and r.reason='Wrong player listed at tip-off'$$), '1');
+call t.check('correction is audited', t.val(:D, $$select count(*)::text from public.audit_logs where action='lineup.corrected'$$), '1');
+call t.check('locked lineup cannot be cleared', t.run(:D, format($f$select public.clear_match_lineup(%L::uuid, %L::uuid)$f$, :HEAT, :M2)), 'locked');
+call t.check('unlocked match lineup can be cleared', t.run(:D, format($f$select public.clear_match_lineup(%L::uuid, %L::uuid)$f$, :HEAT, :M3)), 'OK');
+call t.check('nobody can write lineup tables directly', t.run(:D, $$update public.lineups set status='draft'$$), 'permission denied');
