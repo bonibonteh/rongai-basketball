@@ -172,3 +172,27 @@ call t.check('director replaces a team logo', t.val(:D, $$with u as (update stor
 call t.check('director edits a team profile and photo', t.val(:D, $$with u as (update public.teams set description='Fast break', coach_name='Coach', photo_path='t/p.png', short_name='RH' where name='Rongai Heat' returning 1) select count(*)::text from u$$), '1');
 call t.check('visitor cannot upload a team logo', t.run(null, $$insert into storage.objects(bucket_id,name) values ('team-logos','t/evil.png')$$, true), 'permission denied');
 call t.check('scorekeeper cannot upload a team logo', t.run(:SK, $$insert into storage.objects(bucket_id,name) values ('team-logos','t/evil.png')$$), 'row-level security');
+
+-- 11. Standings points adjustments (positive and negative)
+call t.check('director adds +2 points', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', 2, 'Fair play bonus')$$), 'OK');
+call t.check('director adds -2 points', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000002', -2, 'Late arrival penalty')$$), 'OK');
+call t.check('director adds -1 point', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000003', -1, 'Misconduct warning')$$), 'OK');
+call t.check('final = match points + adjustment (+2)', t.val(:D, $$select (points = match_points + 2 and adjustment = 2)::text from public.get_standings_admin() where team_id='10000000-0000-0000-0000-000000000001'$$), 'true');
+call t.check('final = match points + adjustment (-2)', t.val(:D, $$select (points = match_points - 2 and adjustment = -2)::text from public.get_standings_admin() where team_id='10000000-0000-0000-0000-000000000002'$$), 'true');
+call t.check('public standings show the adjusted points', t.val(null, $$select (points = match_points - 2)::text from public.get_standings() where team_id='10000000-0000-0000-0000-000000000002'$$, true), 'true');
+call t.check('zero adjustment is refused', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', 0, 'Nothing to do here')$$), 'whole number');
+call t.check('adjustment needs a reason', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', -3, 'x')$$), 'reason');
+call t.check('huge adjustment is refused', t.run(:D, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', -500, 'Way too many points')$$), '100 points');
+call t.check('scorekeeper cannot adjust points', t.run(:SK, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', 2, 'Trying my luck')$$), 'Only the Tournament Administrator');
+call t.check('fixture manager cannot adjust points', t.run(:FX, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', -2, 'Trying my luck')$$), 'Only the Tournament Administrator');
+call t.check('visitor cannot adjust points', t.run(null, $$select public.add_standings_adjustment('10000000-0000-0000-0000-000000000001', 2, 'Trying my luck')$$, true), 'permission denied');
+call t.check('nobody can edit history directly', t.run(:D, $$update public.standings_adjustments set points = 50$$), 'permission denied');
+call t.check('nobody can delete history directly', t.run(:D, $$delete from public.standings_adjustments$$), 'permission denied');
+call t.check('director sees the history with names', t.val(:D, $$select count(*)::text from public.list_standings_adjustments() where created_by_name is not null$$), '3');
+call t.check('director reverses an adjustment', t.run(:D, $$select public.reverse_standings_adjustment((select id from public.standings_adjustments where points=-2 and reversed_at is null limit 1), 'Penalty was wrongly applied')$$), 'OK');
+call t.check('reversed points no longer count', t.val(:D, $$select (adjustment = 0)::text from public.get_standings_admin() where team_id='10000000-0000-0000-0000-000000000002'$$), 'true');
+call t.check('reversal stays in the history', t.val(:D, $$select count(*)::text from public.list_standings_adjustments() where reversed_at is not null$$), '1');
+call t.check('cannot reverse twice', t.run(:D, $$select public.reverse_standings_adjustment((select id from public.standings_adjustments where reversed_at is not null limit 1), 'Trying to reverse again')$$), 'already reversed');
+call t.check('director corrects an adjustment', t.run(:D, $$select public.correct_standings_adjustment((select id from public.standings_adjustments where points=-1 and reversed_at is null limit 1), -3, 'Penalty increased after review')$$), 'OK');
+call t.check('corrected value counts', t.val(:D, $$select (adjustment = -3)::text from public.get_standings_admin() where team_id='10000000-0000-0000-0000-000000000003'$$), 'true');
+call t.check('adjustments are audited', t.val(:D, $$select (count(*) >= 5)::text from public.audit_logs where action like 'standings.adjustment%'$$), 'true');

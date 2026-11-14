@@ -149,7 +149,7 @@
 
   function renderStandings() {
     const body = $('standings-body'); if (!body) return;
-    body.innerHTML = st.standings.length ? st.standings.map((t) => '<tr class="' + (t.rank === 1 ? 'text-white' : 'text-gray-300') + '"><td class="py-2.5">' + t.rank + '. ' + esc(t.team_name) + '</td><td class="text-center">' + t.played + '</td><td class="text-center">' + t.wins + '</td><td class="text-center">' + t.losses + '</td><td class="text-right font-bold text-rbtOrange">' + t.points + '</td></tr>').join('')
+    body.innerHTML = st.standings.length ? st.standings.map((t) => '<tr class="' + (t.rank === 1 ? 'text-white' : 'text-gray-300') + '"><td class="py-2.5">' + t.rank + '. ' + esc(t.team_name) + '</td><td class="text-center">' + t.played + '</td><td class="text-center">' + t.wins + '</td><td class="text-center">' + t.losses + '</td><td class="text-right font-bold text-rbtOrange"' + (t.adjustment ? ' title="Includes a ' + (t.adjustment > 0 ? '+' : '') + t.adjustment + ' point adjustment"' : '') + '>' + t.points + (t.adjustment ? '<sup class="text-[9px] ' + (t.adjustment > 0 ? 'text-emerald-300' : 'text-red-300') + '"> ' + (t.adjustment > 0 ? '+' : '') + t.adjustment + '</sup>' : '') + '</td></tr>').join('')
       : '<tr><td colspan="5" class="py-4 text-gray-400">' + (st.fetchedOnce ? 'No teams registered yet.' : 'Loading…') + '</td></tr>';
   }
 
