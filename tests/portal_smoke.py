@@ -6,7 +6,7 @@ STUB = r"""
 (function(){
  const S=window.__S=JSON.parse(localStorage.getItem('__db')||'null')||{writes:[],rpc:[],fn:[]};
  const T={profiles:[{id:'u1',full_name:'Brian Director',display_name:'Brian',email:'d@x.test',role:'director',status:window.__STATUS||'active',department:'',bio:'',avatar_path:null}],
-  official_roles:[{key:'director',label:'Tournament Director',permissions:['*']}],
+  official_roles:[{key:'director',label:'League Director',permissions:['*']}],
   account_requests:[{id:'r1',full_name:'Jo Visitor',email:'jo@x.test',requested_role:'scorekeeper',reason:'I score games at the club',status:'pending',requested_at:new Date().toISOString()}],
   teams:[{id:'t1',name:'Rongai Heat',registration_status:'pending',is_published:false,created_at:new Date().toISOString()},{id:'t2',name:'Kware Titans',registration_status:'approved',is_published:true,created_at:new Date().toISOString()}],
   matches:[{id:'m1',home_team_id:'t1',away_team_id:'t2',status:'live',round:'Pool',court:'Court 1',scheduled_at:new Date().toISOString(),home_score:10,away_score:8,home_fouls:1,away_fouls:2,home_timeouts:3,away_timeouts:3,period:1,clock_seconds:300,shot_clock_seconds:24,clock_running:false,clock_updated_at:new Date().toISOString(),version:3,is_published:true,home:{name:'Rongai Heat'},away:{name:'Kware Titans'}}],
@@ -59,7 +59,7 @@ try:
   # login ok
   pg.goto('http://localhost:8765/portal.html'); pg.wait_for_selector('#si-email'); pg.fill('#si-email','d@x.test'); pg.fill('#si-pw','correct-pass'); pg.click('#b-signin'); pg.wait_for_timeout(1200)
   txt=pg.inner_text('body'); ok('director signs in and sees personalised welcome','Welcome back, Brian' in txt)
-  ok('director sees Official Access and Tournament Controls','Official Access' in txt and 'Tournament Controls' in txt)
+  ok('director sees Official Access and League Controls','Official Access' in txt and 'League Controls' in txt)
   for m in ['courtside','fixtures','teams','reports','announcements','tasks','officials','controls','profile','dashboard']:
    pg.evaluate("location.hash='%s'"%m); pg.wait_for_timeout(450)
   ok('every module renders with no script errors', not errs)

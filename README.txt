@@ -1,4 +1,4 @@
-Rongai Basketball Tournament website
+Rongai Basketball League website
 
 index.html            the page
 css/styles.css        styles

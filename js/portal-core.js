@@ -21,7 +21,7 @@
   Object.assign(P, { $, $$, esc, sleep, icons, fmtTime, fmtClock, periodLabel, toLocalInput, initials });
 
   const ROLE_LABELS = {
-    director: 'Tournament Director', fixture_manager: 'Competition / Fixture Manager', scorekeeper: 'Courtside Scorekeeper',
+    director: 'League Director', fixture_manager: 'Competition / Fixture Manager', scorekeeper: 'Courtside Scorekeeper',
     referee: 'Referee / Match Official', registration_officer: 'Team Registration Officer', stats_officer: 'Statistics and Results Officer',
     media_officer: 'Media / Communications Officer', read_only: 'Read-Only Official'
   };
@@ -124,7 +124,7 @@
           <p class="text-sm text-gray-400">${subtitle}</p>
         </div>
         <div class="bg-rbtCard border border-rbtBorder rounded-2xl p-6 space-y-4 shadow-2xl">${inner}</div>
-        <p class="text-center"><a href="index.html" class="text-xs text-gray-400 hover:text-rbtOrange">&larr; Back to the tournament website</a></p>
+        <p class="text-center"><a href="index.html" class="text-xs text-gray-400 hover:text-rbtOrange">&larr; Back to the league website</a></p>
       </div></main>`;
     wireEyes(root()); icons();
   }
@@ -136,7 +136,7 @@
   const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   function viewSignIn(msg) {
-    authShell('Sign in to access your tournament workspace.', `
+    authShell('Sign in to access your league workspace.', `
       <form id="f-signin" class="space-y-4" novalidate>
         ${msg ? `<p class="text-xs text-gray-200 bg-white/5 border border-rbtBorder rounded-lg p-2.5" role="status">${esc(msg)}</p>` : ''}
         ${errBox('e-signin')}
@@ -161,7 +161,7 @@
 
   const REQUEST_ROLES = ['fixture_manager', 'scorekeeper', 'referee', 'registration_officer', 'stats_officer', 'media_officer', 'read_only'];
   function viewRequest() {
-    authShell('Request access. The Tournament Director reviews every request.', `
+    authShell('Request access. The League Director reviews every request.', `
       <form id="f-req" class="space-y-3" novalidate>
         ${errBox('e-req')}
         <div><label class="${P.label}" for="rq-name">Full name</label><input id="rq-name" required maxlength="120" autocomplete="name" class="${fieldCls}"></div>
@@ -173,7 +173,7 @@
           <div><label class="${P.label}" for="rq-dept">Department</label><input id="rq-dept" maxlength="60" class="${fieldCls}" placeholder="e.g. Courtside table"></div>
           <div><label class="${P.label}" for="rq-role">Official role</label><select id="rq-role" class="${fieldCls}">${REQUEST_ROLES.map((r) => `<option value="${r}">${esc(ROLE_LABELS[r])}</option>`).join('')}</select></div>
         </div>
-        <div><label class="${P.label}" for="rq-reason">Why do you need access?</label><textarea id="rq-reason" rows="3" required minlength="10" maxlength="900" class="${fieldCls}" placeholder="Describe your responsibilities at the tournament."></textarea></div>
+        <div><label class="${P.label}" for="rq-reason">Why do you need access?</label><textarea id="rq-reason" rows="3" required minlength="10" maxlength="900" class="${fieldCls}" placeholder="Describe your responsibilities at the league."></textarea></div>
         <p class="text-[11px] text-gray-500">There is no password here. If you are approved, you receive an email with a secure link to set your own password.</p>
         <button id="b-req" type="submit" class="w-full bg-rbtOrange hover:bg-orange-600 text-black font-heading font-bold uppercase text-sm py-3 rounded-lg transition disabled:opacity-60">Submit Request</button>
         <p class="text-center text-xs"><a href="#signin" class="text-gray-300 hover:text-rbtOrange">I already have an account</a></p>
@@ -189,7 +189,7 @@
       const { error } = await sb.rpc('submit_account_request', { p_full_name: name, p_email: email, p_phone: phone || null, p_requested_role: role, p_reason: full });
       if (error) { busy(btn, false); return showMsg('e-req', RB.friendly(error)); }
       authShell('Request received.', `<div class="space-y-4 text-center"><i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-400 mx-auto"></i>
-        <p class="text-sm text-gray-200">Your account request has been submitted. You will receive further instructions after the Tournament Director reviews your request.</p>
+        <p class="text-sm text-gray-200">Your account request has been submitted. You will receive further instructions after the League Director reviews your request.</p>
         <a href="#signin" class="inline-block bg-rbtOrange text-black font-heading font-bold uppercase text-xs px-5 py-2.5 rounded-lg">Back to sign in</a></div>`);
     };
   }
@@ -265,8 +265,8 @@
       const { data: ud, error: ue } = await sb.auth.getUser();
       if (ue || !ud || !ud.user) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); resetState(); return viewSignIn('Your session has expired. Sign in again.'); }
       const profile = (await sb.from('profiles').select('*').eq('id', ud.user.id).maybeSingle()).data;
-      if (!profile) { S.loading = false; return viewMessage('No official access', 'This account has not been approved for the Official Portal. If you applied, the Tournament Director has not approved your request yet.', true); }
-      if (profile.status !== 'active') { S.loading = false; return viewMessage('Access ' + profile.status, 'Your official access is ' + profile.status + '. Contact the Tournament Director.', true); }
+      if (!profile) { S.loading = false; return viewMessage('No official access', 'This account has not been approved for the Official Portal. If you applied, the League Director has not approved your request yet.', true); }
+      if (profile.status !== 'active') { S.loading = false; return viewMessage('Access ' + profile.status, 'Your official access is ' + profile.status + '. Contact the League Director.', true); }
       const role = await q(sb.from('official_roles').select('*').eq('key', profile.role).single());
       const prefs = (await sb.from('user_dashboard_preferences').select('*').eq('user_id', profile.id).maybeSingle()).data;
       Object.assign(S, { session: ud.user, profile, role, perms: role.permissions || [], prefs: prefs || { layout: {}, notifications: {}, welcome_dismissed: false, welcome_message: null } });
@@ -295,7 +295,7 @@
     if (error && !RB.isNetworkError(error)) { resetState(); return viewSignIn('Your session has ended. Sign in again.'); }
     if (!ud || !ud.user) return;
     const { data: p } = await sb.from('profiles').select('status, role').eq('id', S.profile.id).maybeSingle();
-    if (p && (p.status !== 'active')) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); resetState(); viewSignIn('Your access has been ' + p.status + '. Contact the Tournament Director.'); }
+    if (p && (p.status !== 'active')) { await sb.auth.signOut({ scope: 'local' }).catch(() => {}); resetState(); viewSignIn('Your access has been ' + p.status + '. Contact the League Director.'); }
     else if (p && p.role !== S.profile.role) { loadWorkspace('Your role was updated.'); }
   }
   function startRecheck() {
@@ -366,7 +366,7 @@
       { id: 'announcements', label: 'Announcements', icon: 'megaphone', show: can('content.manage') || can('content.publish'), badge: 'announcements' },
       { id: 'tasks', label: 'Tasks', icon: 'list-checks', show: true, badge: 'tasks' },
       { id: 'officials', label: 'Official Access', icon: 'shield-check', show: can('access.manage'), badge: 'officials' },
-      { id: 'controls', label: 'Tournament Controls', icon: 'sliders-horizontal', show: can('audit.read') || can('matches.correct'), badge: 'controls' },
+      { id: 'controls', label: 'League Controls', icon: 'sliders-horizontal', show: can('audit.read') || can('matches.correct'), badge: 'controls' },
       { id: 'profile', label: 'Profile', icon: 'user-round', show: true }
     ].filter((n) => n.show);
   }
@@ -482,7 +482,7 @@
       ${showWelcome ? `<section class="relative bg-gradient-to-r from-rbtCard via-[#1f2633] to-rbtCard border border-rbtBorder rounded-xl p-4 md:p-5 flex items-center gap-4">
         ${avatarHtml(56)}
         <div class="min-w-0 flex-1"><h2 class="font-heading font-extrabold text-xl md:text-2xl text-white">Welcome back, ${esc(prefName())}.</h2>
-          <p class="text-sm text-gray-300">Happy to have you back in your tournament workspace.</p>
+          <p class="text-sm text-gray-300">Happy to have you back in your league workspace.</p>
           <p class="text-xs text-gray-400 mt-1">${esc(S.role.label)}${S.profile.department ? ' · ' + esc(S.profile.department) : ''} · ${assignedCount} game assignment${assignedCount === 1 ? '' : 's'} · ${S.badges.tasks || 0} open task${(S.badges.tasks || 0) === 1 ? '' : 's'}</p>
           <p class="text-xs text-rbtGold mt-1.5">${esc(S.prefs.welcome_message || MOTIVATION)}</p></div>
         <button id="b-dismiss" class="absolute top-2 right-2 p-1.5 text-gray-500 hover:text-white" aria-label="Dismiss welcome"><i data-lucide="x" class="w-4 h-4"></i></button></section>` : ''}
@@ -524,7 +524,7 @@
           <div><label class="${P.label}">Role</label><input value="${esc(S.role.label)}" disabled class="${P.input} opacity-60"></div>
           <div><label class="${P.label}">Department</label><input value="${esc(p.department || '')}" disabled class="${P.input} opacity-60"></div></div>
         <div><label class="${P.label}" for="pf-bio">Short biography</label><textarea id="pf-bio" rows="3" maxlength="500" class="${P.input}">${esc(p.bio || '')}</textarea></div>
-        <p class="text-[11px] text-gray-500">Your role, department and access are set by the Tournament Director and cannot be changed here.</p>
+        <p class="text-[11px] text-gray-500">Your role, department and access are set by the League Director and cannot be changed here.</p>
         <button type="submit" class="bg-rbtOrange text-black font-heading font-bold uppercase text-xs px-5 py-2.5 rounded-lg">Save profile</button></form>`)}
       ${P.card('Workspace preferences', `<form id="f-prefs" class="space-y-3">
         <div><label class="${P.label}" for="pp-msg">Welcome message</label><input id="pp-msg" maxlength="160" value="${esc(pr.welcome_message || '')}" placeholder="${esc(MOTIVATION)}" class="${P.input}"></div>

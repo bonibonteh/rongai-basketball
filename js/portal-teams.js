@@ -57,7 +57,7 @@
   async function saveTeam(id, patch) {
     const { data, error } = await sb.from('teams').update(patch).eq('id', id).select('id');
     if (error) throw error;
-    if (!data || !data.length) throw new Error('The team was not saved. Your account is not allowed to edit team profiles. Sign in as the Tournament Administrator.');
+    if (!data || !data.length) throw new Error('The team was not saved. Your account is not allowed to edit team profiles. Sign in as the League Administrator.');
   }
 
   async function profile(main, id) {

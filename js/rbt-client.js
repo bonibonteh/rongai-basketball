@@ -37,7 +37,7 @@
     if (/Email not confirmed/i.test(m)) return 'Confirm your email first. Check your inbox for the link.';
     if (/Failed to fetch|NetworkError|Load failed|fetch failed/i.test(m)) return 'Cannot reach the server. Check your connection and try again.';
     if (/rate limit|too many/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
-    if (/User banned|user is banned/i.test(m)) return 'This account is suspended. Contact the Tournament Director.';
+    if (/User banned|user is banned/i.test(m)) return 'This account is suspended. Contact the League Director.';
     if (/JWT|permission denied|row-level security|violates|syntax|relation|column|schema cache/i.test(m)) return 'You are not allowed to do that.';
     return m.replace(/^version_conflict:\s*/, '') || 'Something went wrong. Try again.';
   };

@@ -61,7 +61,7 @@
     const extra = document.createElement('div'); extra.className = 'grid grid-cols-1 lg:grid-cols-3 gap-6';
     extra.innerHTML = '<div class="fx-card bg-rbtCard border border-rbtBorder rounded-xl p-5"><p class="text-[10px] uppercase tracking-widest text-rbtOrange font-bold">Next tip-off</p><div id="fx-next" class="mt-2 text-sm text-gray-400">Waiting for the schedule…</div></div>'
       + '<div class="fx-card bg-rbtCard border border-rbtBorder rounded-xl p-5"><p class="text-[10px] uppercase tracking-widest text-rbtGold font-bold">Table top 3</p><div id="fx-leaders" class="mt-2 text-sm text-gray-400">No results yet.</div></div>'
-      + '<div class="fx-card bg-rbtCard border border-rbtBorder rounded-xl p-5 flex items-center justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest text-emerald-400 font-bold">Tournament in numbers</p><div id="fx-stats" class="mt-2 flex gap-5 text-center"></div></div><button id="fx-dribble" class="fx-dribble" title="Dribble!" aria-label="Dribble the ball"><div class="shadow"></div><div class="ball">' + ballSVG(64) + '</div></button></div>';
+      + '<div class="fx-card bg-rbtCard border border-rbtBorder rounded-xl p-5 flex items-center justify-between gap-3"><div><p class="text-[10px] uppercase tracking-widest text-emerald-400 font-bold">League in numbers</p><div id="fx-stats" class="mt-2 flex gap-5 text-center"></div></div><button id="fx-dribble" class="fx-dribble" title="Dribble!" aria-label="Dribble the ball"><div class="shadow"></div><div class="ball">' + ballSVG(64) + '</div></button></div>';
     ov.insertBefore(extra, hero.nextSibling);
 
     // Fan zone: hoop shot

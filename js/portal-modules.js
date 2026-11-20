@@ -135,7 +135,7 @@
             ${m.status === 'cancelled' && can('matches.restore') && !m.archived_at ? btn('Restore', `data-tr="${m.id}" data-to="scheduled"`, 'good') : ''}
             ${m.archived_at && can('matches.restore') ? btn('Restore from archive', `data-unarch="${m.id}"`, 'good') : ''}
             ${!m.archived_at && can('matches.archive') && m.status !== 'live' ? btn('Archive', `data-arch="${m.id}"`) : ''}
-            ${['live', 'final', 'under_review'].includes(m.status) ? '<span class="text-gray-500">Locked: use Courtside or Tournament Controls</span>' : ''}
+            ${['live', 'final', 'under_review'].includes(m.status) ? '<span class="text-gray-500">Locked: use Courtside or League Controls</span>' : ''}
           </div></td></tr>`; }).join('')}</tbody></table></div>` : empty('No fixtures yet.'))}</div>`;
 
     const f = $('#f-fx'); if (f) f.onsubmit = guard(async (e) => {
@@ -167,7 +167,7 @@
       const teamOptions = teams.map((t) => ({ value: t.id, label: t.name }));
       const r = await P.dialog({
         title: 'Edit fixture',
-        intro: 'Update the teams, tip-off time, court or round. Changes are saved to the tournament database and reflected on the public fixtures when published.',
+        intro: 'Update the teams, tip-off time, court or round. Changes are saved to the league database and reflected on the public fixtures when published.',
         submit: 'Save fixture',
         fields: [
           { name: 'h', label: 'Home team', type: 'select', options: teamOptions, value: m.home_team_id, required: true },

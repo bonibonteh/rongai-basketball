@@ -29,7 +29,7 @@ function filterMatches(filter) {
     if (window.RBT && RBT.live) RBT.live.setFilter(filter);
 }
 
-// Fan Zone demo controls (not connected to the tournament database)
+// Fan Zone demo controls (not connected to the league database)
 function castMvpVote() {
     document.getElementById('mvp-poll-options').classList.add('opacity-50');
     document.getElementById('mvp-vote-msg').classList.remove('hidden');
