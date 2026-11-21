@@ -51,7 +51,7 @@
       q(sb.from('baller_trading_cards').select('*').order('created_at',{ascending:false}))
     ]);
     main.innerHTML='<div class="max-w-6xl mx-auto space-y-5">'+card('Rongai Ballers — Player roster','<div class="flex justify-between items-center gap-3 mb-3"><p class="text-xs text-gray-400">Manage player profiles and roster status.</p>'+btn('Add player','id="bp-add"','primary')+'</div>'+
-      (players.length?'<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">'+players.map(p=>'<article class="bg-black/30 border border-rbtBorder rounded-xl p-4 flex gap-3">'+(p.photo_path?'<img src="'+esc(storageUrl('player-photos',p.photo_path))+'" class="w-16 h-16 rounded-lg object-cover" alt="">':'<div class="w-16 h-16 rounded-lg bg-rbtBorder flex items-center justify-center text-rbtOrange font-bold">'+esc(P.initials(p.full_name))+'</div>')+'<div class="min-w-0 flex-1"><b class="text-white">'+esc(p.full_name)+'</b><p class="text-xs text-gray-400">'+esc(teams.find(t=>t.id===p.team_id)?.name||'No team')+' · '+esc(p.position||'Position not set')+' · #'+esc(p.jersey_no??'—')+'</p><p class="text-xs mt-1">'+chip(p.status)+'</p><div class="flex gap-2 mt-2">'+btn('Edit','data-pe="'+p.id+'"')+btn('Create card','data-pc="'+p.id+'"','primary')+'</div></div></article>').join('')+'</div>':empty('No player profiles yet. Add verified player details to build the roster.')))+
+      (players.length?'<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">'+players.map(p=>'<article class="bg-black/30 border border-rbtBorder rounded-xl p-4 flex gap-3">'+(p.photo_path?'<img src="'+esc(storageUrl('player-photos',p.photo_path))+'" class="w-16 h-16 rounded-lg object-cover" alt="">':'<div class="w-16 h-16 rounded-lg bg-rbtBorder flex items-center justify-center text-rbtOrange font-bold">'+esc(P.initials(p.full_name))+'</div>')+'<div class="min-w-0 flex-1"><b class="text-white">'+esc(p.full_name)+'</b><p class="text-xs text-gray-400">'+esc(teams.find(t=>t.id===p.team_id)?.name||'No team')+' · '+esc(p.position||'Position not set')+' · #'+esc(p.jersey_no??'—')+'</p><p class="text-xs mt-1">'+chip(p.status)+'</p><div class="flex gap-2 mt-2">'+btn('Edit','data-pe="'+p.id+'"')+btn('Create card','data-pc="'+p.id+'"','primary')+btn('Remove','data-pd="'+p.id+'"')+'</div></div></article>').join('')+'</div>':empty('No player profiles yet. Add verified player details to build the roster.')))+
       card('Trading card collection','<div class="flex items-center justify-between mb-3"><p class="text-xs text-gray-400">Create, publish and archive collectible player cards.</p></div>'+
       (cards.length?'<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">'+cards.map(c=>'<div class="bg-black/30 border border-rbtBorder rounded-xl p-4"><p class="text-white font-bold">'+esc(players.find(p=>p.id===c.player_id)?.full_name||'Player')+'</p><p class="text-xs text-rbtGold">'+esc(c.edition)+' · '+esc(c.rarity)+' · '+esc(c.season)+'</p><p class="text-xs text-gray-400 mt-1">'+esc(c.collection_name)+' · '+chip(c.status)+'</p><div class="flex gap-2 mt-3">'+btn('Edit card','data-ce="'+c.id+'"')+btn('Toggle publish','data-cp="'+c.id+'"','primary')+'</div></div>').join('')+'</div>':empty('No trading cards created yet.'))+'</div>');
     const playerForm=async(id)=>{const p=players.find(x=>x.id===id)||{};const v=await editor(id?'Edit player':'Add player',[
@@ -65,6 +65,17 @@
       const r=id?await sb.from('players').update(patch).eq('id',id).select('id').single():await sb.from('players').insert(patch).select('id').single();if(r.error)throw r.error;const photo=await uploadImage('player-photos',r.data.id,v.photo_file,2097152);if(photo){const u=await sb.from('players').update({photo_path:photo}).eq('id',r.data.id);if(u.error)throw u.error;}toast('Player saved.');ballersRender(main);
     };
     $('#bp-add',main).onclick=guard(()=>playerForm(null));
+    $$('[data-pd]',main).forEach(b=>b.onclick=guard(async()=>{
+      const p=players.find(x=>x.id===b.dataset.pd);if(!p||!confirm('Remove '+p.full_name+' from the roster? This also removes them from the public site.'))return;
+      const d=await sb.from('players').delete().eq('id',p.id).select('id');
+      if(d.error){ // still referenced (e.g. trading cards): archive instead so history stays intact
+        const a=await sb.from('players').update({status:'archived',archived_at:new Date().toISOString(),is_published:false}).eq('id',p.id).select('id');
+        if(a.error)throw a.error;if(!a.data||!a.data.length)throw new Error('You are not allowed to remove players.');
+        toast('Player archived and hidden from the public site.');
+      }else if(!d.data||!d.data.length)throw new Error('You are not allowed to remove players.');
+      else toast('Player removed.');
+      ballersRender(main);
+    }));
     $$('[data-pe]',main).forEach(b=>b.onclick=guard(()=>playerForm(b.dataset.pe)));
     const cardForm=async(id,pid)=>{const c=cards.find(x=>x.id===id)||{};const v=await editor(id?'Edit trading card':'Create trading card',[
       {name:'player_id',label:'Player ID',value:pid||c.player_id,required:true},{name:'season',label:'Season',value:c.season||'2026'},
