@@ -266,3 +266,20 @@ call t.check('correction is audited', t.val(:D, $$select count(*)::text from pub
 call t.check('locked lineup cannot be cleared', t.run(:D, format($f$select public.clear_match_lineup(%L::uuid, %L::uuid)$f$, :HEAT, :M2)), 'locked');
 call t.check('unlocked match lineup can be cleared', t.run(:D, format($f$select public.clear_match_lineup(%L::uuid, %L::uuid)$f$, :HEAT, :M3)), 'OK');
 call t.check('nobody can write lineup tables directly', t.run(:D, $$update public.lineups set status='draft'$$), 'permission denied');
+
+-- 13. Player-profile registration
+\echo 'section 13: player registration'
+select set_config('t.pl', (select jsonb_agg(jsonb_build_object('full_name','Reg Player '||g,'jersey_no',g,'position','Point Guard','photo_path','pending/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/'||g||'-abcdef12.jpg','height_cm',180,'bio','hi','date_of_birth','2000-01-01'))::text from generate_series(1,6) g), false);
+call t.check('visitor registers a team with 6 profiles', t.run(null, $$select public.submit_team_registration('Reg FC','Cap Tain','0711222333','QHX892K1L9',current_setting('t.pl')::jsonb)$$, true), 'OK');
+call t.check('all 6 players saved against the team', t.val(:D, $$select count(*)::text from public.players p join public.teams t on t.id=p.team_id where t.name='Reg FC'$$), '6');
+call t.check('too few players refused', t.run(null, $$select public.submit_team_registration('Few FC','Cap Tain','0711222333','QHX892K1L9','[]'::jsonb)$$, true), 'at least');
+call t.check('duplicate jersey refused', t.run(null, $$select public.submit_team_registration('Dup FC','Cap Tain','0711222333','QHX892K1L9',(select jsonb_agg(x||'{"jersey_no":7}'::jsonb) from jsonb_array_elements(current_setting('t.pl')::jsonb) x))$$, true), 'twice');
+call t.check('missing photo refused', t.run(null, $$select public.submit_team_registration('Nophoto FC','Cap Tain','0711222333','QHX892K1L9',(select jsonb_agg(x-'photo_path') from jsonb_array_elements(current_setting('t.pl')::jsonb) x))$$, true), 'photo');
+call t.check('photo outside pending folder refused', t.run(null, $$select public.submit_team_registration('Bad FC','Cap Tain','0711222333','QHX892K1L9',(select jsonb_agg(x||'{"photo_path":"../x.jpg"}'::jsonb) from jsonb_array_elements(current_setting('t.pl')::jsonb) x))$$, true), 'photo');
+call t.check('failed registrations leave no team behind', t.val(:D, $$select count(*)::text from public.teams where name in ('Few FC','Dup FC','Nophoto FC','Bad FC')$$), '0');
+call t.check('pending roster is not public', t.val(null, $$select count(*)::text from public.players where full_name like 'Reg Player%'$$, true), '0');
+call t.check('director sees the pending roster', t.val(:D, $$select count(*)::text from public.players where full_name like 'Reg Player%'$$), '6');
+call t.check('public cannot read M-Pesa code or date of birth', t.run(null, $$select mpesa_code from public.teams$$, true), 'permission denied');
+call t.check('public cannot read player date of birth', t.run(null, $$select date_of_birth from public.players$$, true), 'permission denied');
+call t.check('approving publishes the roster', t.run(:D, $$select public.review_team((select id from public.teams where name='Reg FC'),'approved')$$), 'OK');
+call t.check('approved roster is public', t.val(null, $$select count(*)::text from public.players where full_name like 'Reg Player%'$$, true), '6');

@@ -40,24 +40,4 @@ function handleHalftimeReg(e) {
     e.target.reset();
 }
 
-// Team registration: stored in the database as a pending application for the officials to review.
-async function handleTeamRegistration(e) {
-    e.preventDefault();
-    const err = document.getElementById('reg-error'), ok = document.getElementById('reg-success-box'), btn = document.getElementById('reg-submit');
-    err.classList.add('hidden'); ok.classList.add('hidden');
-    if (!window.RBT || !RBT.sb) { err.textContent = 'Registration is unavailable right now. Try again later.'; err.classList.remove('hidden'); return; }
-    const mpesa = document.getElementById('reg-mpesa').value.trim();
-    const roster = document.getElementById('reg-roster').value.trim() + (mpesa ? '\nM-Pesa transaction: ' + mpesa : '');
-    btn.disabled = true;
-    const { error } = await RBT.sb.rpc('submit_team_registration', {
-        p_team_name: document.getElementById('reg-team-name').value,
-        p_captain: document.getElementById('reg-captain').value,
-        p_phone: document.getElementById('reg-phone').value,
-        p_email: null,
-        p_roster: roster
-    });
-    btn.disabled = false;
-    if (error) { err.textContent = RBT.friendly(error); err.classList.remove('hidden'); return; }
-    ok.classList.remove('hidden');
-    e.target.reset();
-}
+// Team registration lives in js/registration.js (roster with player profiles and photo upload).
